@@ -1,0 +1,16 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Liang</title>
+        <item>
+            <title>0.1.0</title>
+            <pubDate>Mon, 10 Aug 2026 16:11:10 +0800</pubDate>
+            <sparkle:fullReleaseNotesLink>https://github.com/fangshili/Liang/releases/tag/alpha-phase</sparkle:fullReleaseNotesLink>
+            <sparkle:version>1</sparkle:version>
+            <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/fangshili/Liang/releases/download/alpha-phase/Liang-0.1.0.dmg" length="2857000" type="application/octet-stream"/>
+        </item>
+    </channel>
+</rss>
