@@ -3,6 +3,16 @@
     <channel>
         <title>Liang</title>
         <item>
+            <title>0.1.3</title>
+            <pubDate>Mon, 17 Aug 2026 00:00:00 +0800</pubDate>
+            <sparkle:fullReleaseNotesLink>https://github.com/fangshili/Liang/releases/tag/v0.1.3</sparkle:fullReleaseNotesLink>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>0.1.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/fangshili/Liang/releases/download/v0.1.3/Liang-0.1.3.dmg" length="2829689" type="application/octet-stream"/>
+        </item>
+        <item>
             <title>0.1.2</title>
             <pubDate>Sat, 15 Aug 2026 00:18:19 +0800</pubDate>
             <sparkle:fullReleaseNotesLink>https://github.com/fangshili/Liang/releases/tag/v0.1.2</sparkle:fullReleaseNotesLink>
