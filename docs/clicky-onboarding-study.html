@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clicky Onboarding 完整研究报告</title>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #1a1a1a;
+    --surface-hover: #242424;
+    --border: #2a2a2a;
+    --text: #e5e5e5;
+    --text-dim: #999;
+    --accent: #3b82f6;
+    --accent-glow: rgba(59,130,246,0.3);
+    --warn: #f59e0b;
+    --green: #22c55e;
+    --red: #ef4444;
+    --code-bg: #141414;
+    --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* === Hero === */
+  .hero {
+    padding: 80px 40px 60px;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(59,130,246,0.08) 0%, transparent 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .hero h1 {
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  .hero .subtitle {
+    font-size: 18px;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+  .hero .note {
+    margin-top: 24px;
+    padding: 12px 24px;
+    display: inline-block;
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--warn);
+  }
+
+  /* === Layout === */
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 30px 80px;
+  }
+  section { margin-bottom: 56px; }
+  h2 {
+    font-size: 26px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px; height: 34px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 28px 0 12px;
+    color: var(--text);
+  }
+  p { color: var(--text-dim); margin-bottom: 12px; }
+
+  /* === Code === */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 12px 0 20px;
+  }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; }
+  .comment { color: #6b7280; }
+  .keyword { color: #c084fc; }
+  .string { color: #34d399; }
+  .number { color: #f59e0b; }
+  .func { color: #60a5fa; }
+  .type { color: #38bdf8; }
+  .var { color: #fbbf24; }
+
+  /* === Cards === */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 16px;
+    margin: 16px 0 24px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+  }
+  .card h4 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .card p {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin: 0;
+  }
+  .card .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background: rgba(59,130,246,0.12);
+    color: var(--accent);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  /* === Timeline === */
+  .timeline {
+    position: relative;
+    padding-left: 32px;
+    border-left: 2px solid var(--border);
+    margin: 20px 0;
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 28px;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -38px;
+    top: 4px;
+    width: 12px; height: 12px;
+    background: var(--accent);
+    border-radius: 50%;
+    border: 2px solid var(--bg);
+  }
+  .timeline-item .time {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .timeline-item h4 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .timeline-item p {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin: 0;
+  }
+
+  /* === Animation specs === */
+  .anim-spec {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 12px 0 20px;
+  }
+  .anim-spec .key {
+    background: var(--surface);
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+  .anim-spec .val {
+    background: var(--code-bg);
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--text-dim);
+    font-family: 'SF Mono', monospace;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* === Decision card === */
+  .decision {
+    background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(168,85,247,0.06));
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin: 16px 0 24px;
+  }
+  .decision h4 {
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .decision p { font-size: 13px; margin: 0; }
+
+  /* === Liang comparison === */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0 24px;
+  }
+  .compare-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .compare-col h4 { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+  .compare-col ul { padding-left: 16px; font-size: 13px; color: var(--text-dim); }
+  .compare-col li { margin-bottom: 6px; }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 32px 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Clicky Onboarding 完整研究报告</h1>
+  <p class="subtitle">基于 farzaa/clicky 原仓库源码级分析</p>
+  <div class="note">注意：开源版本是纯原生 macOS onboarding，无浏览器环节。但原生体验的动画设计、AI 集成、权限引导仍然非常值得借鉴。</div>
+</div>
+
+<div class="content">
+
+<!-- ====== SECTION 1 ====== -->
+<section>
+  <h2><span class="num">1</span> 整体架构</h2>
+  <p>启动 → 自动判断是否弹出面板 → 用户点 Start → 触发 onboarding 演示 → 权限授予 → 完成。全程为原生 macOS 体验，没有 webview、没有浏览器、没有本地 HTTP server。</p>
+
+  <h3>关键文件</h3>
+  <div class="card-grid">
+    <div class="card">
+      <div class="tag">入口</div>
+      <h4>leanring_buddyApp.swift</h4>
+      <p>app 启动后判断 <code>hasCompletedOnboarding</code> 和 <code>allPermissionsGranted</code>，任意未满足即自动弹出面板。面板是 borderless floating window —— 视觉上像网页但其实是 native。</p>
+    </div>
+    <div class="card">
+      <div class="tag">面板 UI</div>
+      <h4>CompanionPanelView.swift</h4>
+      <p>权限状态列表（麦克风/辅助功能/语音识别）+ 可选邮箱输入 + Start 按钮。所有交互纯 SwiftUI。</p>
+    </div>
+    <div class="card">
+      <div class="tag">核心引擎</div>
+      <h4>CompanionManager.swift</h4>
+      <p>onboarding 全生命周期管理：权限检测、触发演示、视频播放、Claude 截图分析、演示结束回调和状态流转。</p>
+    </div>
+    <div class="card">
+      <div class="tag">动画渲染</div>
+      <h4>OverlayWindow.swift</h4>
+      <p>全屏透明叠加层：蓝色三角光标跟随、欢迎文字动画、导航气泡、贝塞尔飞行弧线。</p>
+    </div>
+    <div class="card">
+      <div class="tag">设计系统</div>
+      <h4>DesignSystem.swift</h4>
+      <p>动画常量池：时长、缓动、曲线函数。button hover glow 的完整实现。</p>
+    </div>
+  </div>
+
+  <h3>状态流转</h3>
+  <pre><span class="comment">// leanring_buddyApp.swift — 启动入口</span>
+<span class="keyword">if</span> !companionManager.<span class="var">hasCompletedOnboarding</span> || !companionManager.<span class="var">allPermissionsGranted</span> {
+    menuBarPanelManager?.<span class="func">showPanelOnLaunch</span>()  <span class="comment">// 自动弹出面板</span>
+}
+
+<span class="comment">// CompanionManager.swift — 权限判断</span>
+<span class="keyword">var</span> <span class="var">allPermissionsGranted</span>: <span class="type">Bool</span> {
+    <span class="func">Permissions</span>.<span class="func">microphoneAuthorized</span> &&
+    <span class="func">Permissions</span>.<span class="func">accessibilityAuthorized</span>(prompt: <span class="keyword">false</span>) &&
+    <span class="func">Permissions</span>.<span class="func">speechAuthorized</span>
+}
+
+<span class="comment">// CompanionManager.swift — 已 onboard 判定</span>
+<span class="func">UserDefaults</span>.<span class="keyword">standard</span>.<span class="func">bool</span>(forKey: <span class="string">"hasCompletedOnboarding"</span>)</pre>
+</section>
+
+<hr>
+
+<!-- ====== SECTION 2 ====== -->
+<section>
+  <h2><span class="num">2</span> 启动面板 UI（CompanionPanelView）</h2>
+  <p>面板通过 <code>NSFloatingPanel</code> 宿主，<code>level = .floating</code>，<code>collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]</code>。按钮使用 DesignSystem 的 <code>PrimaryButtonStyle</code>，带 hover glow 动画。</p>
+
+  <h3>面板内容（自上而下）</h3>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="time">顶部</div>
+      <h4>标题 + 徽标</h4>
+      <p>"Clicky" 大字 + 🎯 emoji + 版本号</p>
+    </div>
+    <div class="timeline-item">
+      <div class="time">中部</div>
+      <h4>权限列表</h4>
+      <p>每行一个权限：麦克风 (check/❌)、辅助功能 (check/❌)、语音识别 (check/❌)。未授权的带 "Grant" 按钮，点击跳转系统设置 <code>openMicrophoneSettings()</code> 等。</p>
+    </div>
+    <div class="timeline-item">
+      <div class="time">中下</div>
+      <h4>邮箱输入（可选）</h4>
+      <p>输入框 + "Get updates about new features" 描述文字</p>
+    </div>
+    <div class="timeline-item">
+      <div class="time">底部</div>
+      <h4>Start 按钮</h4>
+      <p>蓝色主按钮，带 hover 发光动画。点击 → <code>companionManager.startOnboarding()</code></p>
+    </div>
+  </div>
+
+  <div class="decision">
+    <h4>为什么看起来像网页？</h4>
+    <p>面板是 <code>borderless</code> + <code>nonactivatingPanel</code>，没有标准窗口 chrome（无标题栏/红绿灯），加上圆角边框、纯色背景、系统字体排版 —— 视觉上确实很像一个精心设计的网页卡片。这可能是你记忆混淆的原因：它"看起来像网页"但实际上是原生 SwiftUI。</p>
+  </div>
+</section>
+
+<hr>
+
+<!-- ====== SECTION 3 ====== -->
+<section>
+  <h2><span class="num">3</span> 核心演示流程：<code>triggerOnboarding()</code></h2>
+  <p>这是 onboarding 最出彩的部分。不是填表、不是播放视频教程，而是一次 <strong>AI 实时分析你的屏幕</strong> + <strong>动画导航</strong> 的魔法时刻。</p>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="time">Step 1</div>
+      <h4>全屏截图 → 发给 Claude Vision</h4>
+      <p><code>CGWindowListCreateImage(.screenBounds)</code> 抓全屏 → 转 base64 → POST 到 Claude API。prompt 要求 Claude 返回 JSON：<code>{message: "...", x: 0.3, y: 0.4}</code>（屏幕百分比坐标 + 气泡文字）。<br>同时播放 onboarding 视频（AVPlayer 后台静音加载）+ 背景音乐（ff.mp3 — Final Fantasy 的 Besaid 岛主题曲）。</p>
+    </div>
+    <div class="timeline-item">
+      <div class="time">Step 2</div>
+      <h4>音乐结束 → 视频停止 → 创建蓝色三角光标</h4>
+      <p><code>overlayWindow.showOverlay()</code> 显示全屏透明 <code>NSWindow</code>，里面是 <code>BlueCursorView</code>：一个 22pt 蓝色三角形，60fps 平滑跟随鼠标（35pt 右偏移 + 25pt 下偏移）。</p>
+    </div>
+    <div class="timeline-item">
+      <div class="time">Step 3</div>
+      <h4>欢迎文字动画："hey! i'm clicky"</h4>
+      <p>蓝色三角旁显示文字气泡。逐字打印（30ms/字，<code>easeIn 0.4s</code> 气泡淡入），显示 2 秒后淡出。</p>
+    </div>
+    <div class="timeline-item">
+      <div class="time">Step 4</div>
+      <h4>贝塞尔飞行弧线 → 指向 Claude 分析的元素</h4>
+      <p>蓝色三角从当前鼠标位置沿贝塞尔曲线飞到 Claude 返回的屏幕坐标。飞行中旋转角度动态跟随切线方向。到达后显示导航气泡，逐字打印 Claude 的描述文字（每个字 30-60ms 随机延迟模拟"说话"节奏）。</p>
+    </div>
+    <div class="timeline-item">
+      <div class="time">Step 5</div>
+      <h4>3 秒后飞回光标</h4>
+      <p>指针在目标停留 3 秒，更新用户实际鼠标位置，飞回并恢复跟随模式。</p>
+    </div>
+    <div class="timeline-item">
+      <div class="time">Step 6</div>
+      <h4>完成</h4>
+      <p><code>UserDefaults.set(true, "hasCompletedOnboarding")</code> — 下次启动不再弹面板。</p>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ====== SECTION 4 ====== -->
+<section>
+  <h2><span class="num">4</span> 动画技术细节</h2>
+
+  <h3>4.1 蓝色三角光标（BlueCursorView）</h3>
+  <p>22pt 蓝色等边三角形，通过 <code>TimelineView(.animation(minimumInterval: 1.0/60.0))</code> 以 60fps 读取 <code>NSEvent.mouseLocation</code> 并更新位置，形成平滑跟随效果。<code>rotationEffect</code> 控制箭头朝向。</p>
+  <div class="anim-spec">
+    <div class="key">组件</div><div class="val">BlueCursorView — 22pt 三角形 + Shadow + 跟随偏移 (35, 25)</div>
+    <div class="key">帧率</div><div class="val">60fps (TimelineView + NSEvent.mouseLocation)</div>
+    <div class="key">颜色</div><div class="val">Color(red: 0.27, green: 0.62, blue: 0.98) ≡ #4582FA</div>
+    <div class="key">旋转</div><div class="val">rotationEffect(-35°) 默认，跟随时平滑过渡</div>
+    <div class="key">缩放</div><div class="val">scaleEffect(buddyFlightScale)，飞行中 0.8→1.0</div>
+  </div>
+
+  <h3>4.2 贝塞尔飞行弧线</h3>
+  <p>三角从当前位置到目标位置的路径不是直线，而是一条向上的二次贝塞尔曲线。60fps 逐帧更新位置，同时用 smoothstep 控制飞行进度（easeInEaseOut 效果），并在中点做 scale pulse（缩小 20%→恢复）。旋转角度沿切线方向动态计算。</p>
+  <div class="anim-spec">
+    <div class="key">路径</div><div class="val">Quadratic bezier: control point 高于 start/end 中点 80-120pt</div>
+    <div class="key">进度</div><div class="val">smoothstep(t)，easeInEaseOut 效果</div>
+    <div class="key">中点特效</div><div class="val">scaleEffect 0.8→1.0（弹性缩小回弹）</div>
+    <div class="key">旋转</div><div class="val">实时计算切线角度 atan2(dx/dt, dy/dt)</div>
+    <div class="key">时长</div><div class="val">18fps × N 帧（根据距离动态）</div>
+  </div>
+
+  <h3>4.3 文字流式打印</h3>
+  <pre><span class="comment">// OverlayWindow.swift — 欢迎消息逐字打印</span>
+<span class="keyword">func</span> <span class="func">startWelcomeAnimation</span>() {
+    <span class="func">withAnimation</span>(.<span class="func">easeIn</span>(duration: <span class="number">0.4</span>)) { self.<span class="var">bubbleOpacity</span> = <span class="number">1.0</span> }
+    <span class="keyword">var</span> currentIndex = <span class="number">0</span>
+    Timer.<span class="func">scheduledTimer</span>(withTimeInterval: <span class="number">0.03</span>, repeats: <span class="keyword">true</span>) { timer <span class="keyword">in</span>
+        <span class="comment">// 每 30ms 追加一个字 → 展示 2s → 淡出</span>
+        self.<span class="var">welcomeText</span>.<span class="func">append</span>(...)
+    }
+}
+
+<span class="comment">// 导航气泡逐字打印（更有节奏感的版本）</span>
+<span class="keyword">func</span> <span class="func">streamNavigationBubbleCharacter</span>(...) {
+    <span class="keyword">let</span> characterDelay = Double.<span class="func">random</span>(in: <span class="number">0.03</span>...<span class="number">0.06</span>)  <span class="comment">// 可变延迟模拟说话节奏</span>
+    <span class="comment">// 第一个字触发 scale-bounce 入场 (scaleEffect 0.5→1.0)</span>
+}</pre>
+
+  <h3>4.4 导航气泡动画</h3>
+  <div class="anim-spec">
+    <div class="key">入场</div><div class="val">scaleEffect: 首字 0.5→1.0（scale-bounce 弹入）</div>
+    <div class="key">背景</div><div class="val">Color.blue.opacity(0.85) + blur(8) 发光</div>
+    <div class="key">位置</div><div class="val">跟随蓝色三角上方 30pt 偏移</div>
+    <div class="key">持续</div><div class="val">60fps 实时更新，跟三角位置同步</div>
+  </div>
+
+  <h3>4.5 主按钮 Hover Glow（DesignSystem）</h3>
+  <pre><span class="comment">// DesignSystem.swift — 按钮悬停发光动画</span>
+<span class="keyword">struct</span> <span class="type">GlowButtonStyle</span>: <span class="type">ButtonStyle</span> {
+    @<span class="type">State</span> <span class="keyword">private</span> <span class="keyword">var</span> <span class="var">isHovering</span> = <span class="keyword">false</span>   <span class="comment">// onHover</span>
+    @<span class="type">State</span> <span class="keyword">private</span> <span class="keyword">var</span> <span class="var">glowPhase</span> = <span class="number">0.0</span>
+
+    <span class="keyword">var</span> body {
+        configuration.<span class="var">label</span>
+            .<span class="func">background</span>(glowOverlay)   <span class="comment">// radialGradient on hover</span>
+            .<span class="func">scaleEffect</span>(isHovering ? <span class="number">1.02</span> : <span class="number">1.0</span>)
+            .<span class="func">animation</span>(.<span class="func">easeOut</span>(duration: <span class="number">0.25</span>), value: isHovering)
+            .<span class="func">onHover</span> { isHovering = $0 }
+            .<span class="func">onAppear</span> {
+                <span class="comment">// 2.5s 循环：发光透明度 + 半径同时呼吸</span>
+                <span class="func">withAnimation</span>(.<span class="func">easeInOut</span>(duration: <span class="number">2.5</span>).<span class="func">repeatForever</span>()) {
+                    <span class="var">glowPhase</span> = <span class="number">1.0</span>
+                }
+            }
+    }
+}</pre>
+  <div class="anim-spec">
+    <div class="key">Hover 缩放</div><div class="val">scaleEffect 1.0 → 1.02，easeOut 0.25s</div>
+    <div class="key">发光循环</div><div class="val">easeInEaseOut 2.5s repeatForever</div>
+    <div class="key">发光实现</div><div class="val">radialGradient：中心 op(0.3)→外层 op(0) + blur(8)</div>
+    <div class="key">发光半径</div><div class="val">glowPhase 在 40...120pt 间振荡</div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ====== SECTION 5 ====== -->
+<section>
+  <h2><span class="num">5</span> 权限引导流程</h2>
+  <p>onboarding 面板不做自己的授权 UI，只负责三件事：<strong>显示状态</strong>、<strong>注册监听</strong>、<strong>跳转系统设置</strong>。授权框由 macOS 系统弹出。</p>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="tag">麦克风</div>
+      <h4>AVAudioSession.recordPermission</h4>
+      <p>读状态 + AVAuthorizationStatus。未授权时面板显示 "Grant" 按钮 → <code>openMicrophoneSettings()</code></p>
+    </div>
+    <div class="card">
+      <div class="tag">辅助功能</div>
+      <h4>AXIsProcessTrustedWithOptions</h4>
+      <p>prompt:true 时弹出系统授权对话框。面板轮询检测状态变化。</p>
+    </div>
+    <div class="card">
+      <div class="tag">语音识别</div>
+      <h4>SFSpeechRecognizer.authorizationStatus</h4>
+      <p>读取 iOS-style API 状态，不需要系统设置跳转。</p>
+    </div>
+    <div class="card">
+      <div class="tag">屏幕录制</div>
+      <h4>CGPreflightScreenCaptureAccess</h4>
+      <p>不在 onboarding 面板里出现。首次截图时才检测并跳转设置（懒加载）。</p>
+    </div>
+  </div>
+
+  <div class="decision">
+    <h4>设计原则</h4>
+    <p>面板只做"状态展示 + 跳转入口"，把授权交互完全交给 macOS 原生控件。这保证了用户看到的是 Apple 的标准权限对话框（统一 UI），而不是自己拼凑的可疑授权 UI。</p>
+  </div>
+</section>
+
+<hr>
+
+<!-- ====== SECTION 6 ====== -->
+<section>
+  <h2><span class="num">6</span> AI 集成：Claude 屏幕分析</h2>
+  <pre><span class="comment">// CompanionManager.swift — triggerOnboarding() 核心逻辑</span>
+<span class="comment">// 1. 全屏截图</span>
+<span class="keyword">let</span> image = CGWindowListCreateImage(
+    .<span class="func">infinite</span>, .<span class="var">optionOnScreenOnly</span>,
+    <span class="number">0</span>, .<span class="var">bestResolution</span>
+)
+<span class="keyword">let</span> base64 = image?.<span class="func">base64</span>()
+
+<span class="comment">// 2. 发给 Claude (type: image + text)</span>
+<span class="keyword">let</span> response = <span class="keyword">await</span> <span class="func">sendToClaude</span>(messages: [
+    { <span class="var">type</span>: <span class="string">"image"</span>, <span class="var">source</span>: base64 },
+    { <span class="var">type</span>: <span class="string">"text"</span>, <span class="var">text</span>: <span class="string">"""
+        Pick ONE thing on this screen and point to it like you're showing 
+        a friend something cool. Reply with JSON: {message, x, y} where 
+        x/y are 0-1 percentages. Message is a short fun phrase.
+    """</span>}
+])
+
+<span class="comment">// 3. 解析 → 导航到目标坐标 + 显示气泡</span>
+<span class="keyword">let</span> targetScreenX = response.x * screenWidth
+<span class="keyword">let</span> targetScreenY = response.y * screenHeight
+<span class="func">navigateTo</span>(x: targetScreenX, y: targetScreenY, message: response.message)</pre>
+  <p>这个流程让 onboarding 变成 <strong>"AI 对着你的屏幕说话"</strong>，而不是千篇一律的教程视频。每次看到的演示内容都不同，因为它分析的是用户当前的真实桌面。</p>
+</section>
+
+<hr>
+
+<!-- ====== SECTION 7 ====== -->
+<section>
+  <h2><span class="num">7</span> 设计系统（DesignSystem.swift）</h2>
+
+  <h3>色彩体系</h3>
+  <div class="anim-spec">
+    <div class="key">主色</div><div class="val">Tailwind blue-500 → Color(0.27, 0.62, 0.98) ≅ #4582FA</div>
+    <div class="key">主色 hover</div><div class="val">Tailwind blue-600 → Color(0.22, 0.52, 0.88)</div>
+    <div class="key">背景</div><div class="val">NSVisualEffectView + material .hudWindow，叠加 0.02 black opacity</div>
+    <div class="key">表面层级</div><div class="val">基础 → elevated → pressed（opacity 逐级递增 0→0.04→0.08）</div>
+    <div class="key">面板背景</div><div class="val">blendMode: .plusLighter, opacity: 0.03, blur(50)</div>
+    <div class="key">边框</div><div class="val">border opacity: 0.05 → hover: 0.08</div>
+  </div>
+
+  <h3>动画时长常量</h3>
+  <div class="anim-spec">
+    <div class="key">.fast</div><div class="val">0.15s — 微小状态切换（hover、press）</div>
+    <div class="key">.normal</div><div class="val">0.25s — 标准过渡（面板出现/消失、scale）</div>
+    <div class="key">.slow</div><div class="val">0.4s — 重点动画（气泡淡入、面板展开）</div>
+    <div class="key">.glow</div><div class="val">2.5s — button hover glow 呼吸周期</div>
+    <div class="key">缓动</div><div class="val">.easeIn, .easeOut, .easeInEaseOut — 全部系统默认曲线</div>
+  </div>
+
+  <h3>Smoothstep 函数</h3>
+  <pre><span class="comment">// DesignSystem.swift — 平滑步进曲线</span>
+<span class="keyword">static func</span> <span class="func">smoothstep</span>(<span class="keyword">_</span> t: <span class="type">Double</span>) -> <span class="type">Double</span> {
+    <span class="keyword">let</span> clamped = <span class="func">max</span>(<span class="number">0</span>, <span class="func">min</span>(<span class="number">1</span>, t))
+    <span class="keyword">return</span> clamped * clamped * (<span class="number">3</span> - <span class="number">2</span> * clamped)
+}
+<span class="comment">// 用于贝塞尔飞行弧线的进度插值：启停平滑，中间线性</span></pre>
+</section>
+
+<hr>
+
+<!-- ====== SECTION 8 ====== -->
+<section>
+  <h2><span class="num">8</span> Onboarding 衍生交互</h2>
+  <p>onboarding 里的动画组件不是一次性用品，它们直接复用到日常交互中：</p>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="tag">日常交互</div>
+      <h4>BlueCursorView</h4>
+      <p>onboarding 结束后变成用户的常驻光标伴偶，始终跟随鼠标。支持 "pointing" 和 "followingCursor" 两种模式。</p>
+    </div>
+    <div class="card">
+      <div class="tag">日常交互</div>
+      <h4>导航 + 气泡</h4>
+      <p>Claude 分析屏幕后返回的坐标 → 同样的贝塞尔飞行弧线 → 同样的逐字打印气泡 → 同样的 3 秒停留 → 飞回。</p>
+    </div>
+    <div class="card">
+      <div class="tag">日常交互</div>
+      <h4>Panel 重新打开</h4>
+      <p>菜单栏常驻入口 "Permissions & Help" 可随时重开面板，修改设置或补授权。</p>
+    </div>
+    <div class="card">
+      <div class="tag">日常交互</div>
+      <h4>蓝色波形</h4>
+      <p>按住 push-to-talk 时，三角替换为 5 条蓝色波形柱，实时跟随音频功率（30-36fps）。</p>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ====== SECTION 9 ====== -->
+<section>
+  <h2><span class="num">9</span> 与你的 Liang 项目对比</h2>
+
+  <div class="compare">
+    <div class="compare-col">
+      <h4 style="color:#60a5fa;">Clicky</h4>
+      <ul>
+        <li>单页面板 + 一键 Start</li>
+        <li>AI 实时分析屏幕 + 动画导航（魔法感）</li>
+        <li>权限用系统原生对话框</li>
+        <li>一个 bool 持久化完成状态</li>
+        <li>无自动安装/手动安装双路径</li>
+        <li>无静态/动态两层检测</li>
+        <li>面板关闭 = 软跳过（下次启动仍弹）</li>
+        <li>完成后的动画组件复用到日常交互</li>
+      </ul>
+    </div>
+    <div class="compare-col">
+      <h4 style="color:#a78bfa;">Liang (你的 T10)</h4>
+      <ul>
+        <li>分步向导弹窗（自动安装 / 手动安装 / 稍后再说）</li>
+        <li>无 AI 交互</li>
+        <li>权限用系统原生对话框 ✓（一致）</li>
+        <li>hasCompletedCursorSetup 持久化</li>
+        <li>自动安装（写 hooks.json + 复制脚本）</li>
+        <li>静态检测（文件/权限）+ 动态检测（30s 事件监听）</li>
+        <li>稍后再说 = 永久跳过</li>
+        <li>onboarding 组件独立未复用</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>可借鉴点</h3>
+  <div class="decision">
+    <h4>P2 — 主按钮 hover glow</h4>
+    <p>2.5s 循环的 radialGradient 呼吸 + hover 1.02x scale。你现有的 button styles 都很平，加上这个门槛极低（~10 行），但质感提升明显。</p>
+  </div>
+  <div class="decision">
+    <h4>P3 — smoothstep 缓动函数</h4>
+    <p>你当前动画全用系统 easeInEaseOut。smoothstep 在飞行/导航类路径动画中比系统 curve 更自然（启停平滑，中间线性）。DesignSystem 里 4 行代码即可复用。</p>
+  </div>
+  <div class="decision">
+    <h4>P3 — 欢迎文字逐字打印</h4>
+    <p>30-60ms 随机延迟模拟"说话"节奏，比一口气显示整段文字生动得多。适合首次启动的欢迎语或状态切换的提示文案。</p>
+  </div>
+</section>
+
+<hr>
+
+<!-- ====== SECTION 10 ====== -->
+<section>
+  <h2><span class="num">10</span> 总结</h2>
+
+  <h3>开源版的 truth</h3>
+  <p>两个开源仓库（<code>dabit3/heyclicky-clone</code> 和 <code>farzaa/clicky</code>）<strong>都没有浏览器 onboarding</strong>。你体验过的浏览器 → macOS 无缝衔接大概率是 <strong>clicky 的商业发布版本</strong>独有功能，可能通过以下方式实现：</p>
+  <ul style="padding-left:20px;color:var(--text-dim);font-size:14px;">
+    <li>网站端完成配置（权限勾选 + 邮箱）→ 生成 deep link (<code>clicky://setup?token=xxx</code>) → app 收到 URL scheme 拉起并写入本地</li>
+    <li>或者 app 启动时在本地起一个 HTTP server，浏览器打开 <code>localhost:PORT</code> 完成配置</li>
+    <li>这两种模式在开源代码中都 404</li>
+  </ul>
+  <p>如果你确实想复刻"浏览器配置 → 写入 macOS 应用"这条路径，方案很明确：<code>CFBundleURLTypes</code> 注册 custom scheme + <code>application(_:open:)</code> handler。但这需要额外开发一个 web 前端。</p>
+
+  <h3>但即使没有浏览器环节，开源版的 onboarding 依然有大量值得借鉴的细节</h3>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="tag">可立即借鉴</div>
+      <h4>Button hover glow</h4>
+      <p>radialGradient 呼吸 + scale pulse，~10 行 SwiftUI</p>
+    </div>
+    <div class="card">
+      <div class="tag">可立即借鉴</div>
+      <h4>Smoothstep 函数</h4>
+      <p>4 行代码，飞行/导航动画比 easeInEaseOut 自然</p>
+    </div>
+    <div class="card">
+      <div class="tag">可立即借鉴</div>
+      <h4>逐字打印文案</h4>
+      <p>Timer + variable delay，比静态文字生动</p>
+    </div>
+    <div class="card">
+      <div class="tag">设计理念</div>
+      <h4>动画资产复用</h4>
+      <p>把 onboarding 的体验组件拉通到日常使用，而非"用完即弃"</p>
+    </div>
+    <div class="card">
+      <div class="tag">设计理念</div>
+      <h4>权限懒加载</h4>
+      <p>不紧急的权限到实际使用时再要，避免启动时过度打扰</p>
+    </div>
+    <div class="card">
+      <div class="tag">设计理念</div>
+      <h4>用系统原生授权框</h4>
+      <p>永远不自己做权限 UI，用户体验一致且可信</p>
+    </div>
+  </div>
+</section>
+
+</div>
+
+</body>
+</html>

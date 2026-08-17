@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liang Onboarding Prototype v2</title>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #1a1a1a;
+    --surface2: #222;
+    --border: #2e2e2e;
+    --text: #e5e5e5;
+    --text-dim: #888;
+    --text-muted: #666;
+    --accent: #3b82f6;
+    --accent-dim: rgba(59,130,246,0.12);
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,0.12);
+    --orange: #FF9229;
+    --orange-dim: rgba(255,146,41,0.12);
+    --blue: #00BFFF;
+    --lime: #00FF52;
+    --red: #ff3b30;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    background: #000;
+    color: var(--text);
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+
+  /* === Window === */
+  .window {
+    width: 720px;
+    background: var(--surface);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03);
+    overflow: hidden;
+    position: relative;
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .window__titlebar {
+    height: 40px;
+    display: flex; align-items: center;
+    padding: 0 16px; gap: 8px;
+    position: relative; z-index: 2;
+  }
+  .traffic-lights { display: flex; gap: 7px; }
+  .traffic-light { width: 12px; height: 12px; border-radius: 50%; }
+  .tl-close { background: #ff5f57; }
+  .tl-min  { background: #febc2e; }
+  .tl-max  { background: #28c840; }
+  .window__title {
+    flex:1; text-align:center; font-size:12px; font-weight:500; color:var(--text-dim);
+    margin-right:52px;
+  }
+  .window__titlebar.has-border { border-bottom: 1px solid var(--border); }
+
+  /* === Steps bar === */
+  .steps-bar {
+    display:flex; align-items:center; justify-content:center;
+    padding: 16px 40px 4px; gap: 0;
+  }
+  .step-dot {
+    width:30px; height:30px; border-radius:50%; border:2px solid var(--border);
+    background:var(--surface2);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:600; color:var(--text-muted);
+    transition: all 0.4s;
+  }
+  .step-dot.active { border-color:var(--accent); background:var(--accent-dim); color:var(--accent); box-shadow:0 0 12px rgba(59,130,246,0.2); }
+  .step-dot.done   { border-color:var(--green); background:var(--green-dim); color:var(--green); }
+  .step-line { width:56px; height:2px; background:var(--border); margin:0 6px; transition:background 0.4s; }
+  .step-line.done { background:var(--green); }
+
+  /* === Panels === */
+  .content { position:relative; min-height: 460px; }
+  .step-panel {
+    opacity:0; transform:translateY(10px); pointer-events:none;
+    position:absolute; top:0; left:0; right:0; bottom:0;
+    padding: 8px 40px 24px;
+    transition: opacity 0.35s, transform 0.35s;
+    display:flex; flex-direction:column;
+  }
+  .step-panel.visible {
+    opacity:1; transform:translateY(0); pointer-events:auto;
+    position:relative;
+  }
+
+  /* === Step 1 header === */
+  .s1-header { text-align:center; margin-bottom:18px; }
+  .s1-header h2 { font-size:19px; font-weight:700; margin-bottom:3px; }
+  .s1-header p  { font-size:13px; color:var(--text-dim); line-height:1.5; }
+
+  /* === Cursor main card === */
+  .cursor-main-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px 20px;
+    text-align: center;
+    transition: all 0.3s;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+  .cursor-main-card.connected {
+    border-color: rgba(34,197,94,0.4);
+    background: linear-gradient(135deg, rgba(34,197,94,0.06), var(--surface2));
+  }
+  .cursor-icon {
+    width: 56px; height: 56px; margin: 0 auto 12px;
+    border-radius: 14px;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 26px; font-weight: 700;
+  }
+  .cursor-main-card:not(.connected) .cursor-icon {
+    background: var(--accent-dim); color: var(--accent);
+    border: 1px solid rgba(59,130,246,0.2);
+  }
+  .cursor-main-card.connected .cursor-icon {
+    background: rgba(34,197,94,0.15); color: var(--green);
+    border: 1px solid rgba(34,197,94,0.3);
+  }
+  .cursor-name { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .cursor-status {
+    font-size: 12px; margin-bottom: 14px;
+  }
+  .cursor-main-card:not(.connected) .cursor-status { color: var(--red); }
+  .cursor-main-card.connected .cursor-status { color: var(--green); }
+
+  /* === Other agents text list === */
+  .other-agents {
+    text-align: center; margin-top: 16px;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .other-agents span {
+    display: inline-block; margin: 0 8px;
+  }
+  .other-agents .divider { color: var(--border); }
+
+  /* === Step 1 actions === */
+  .s1-actions { text-align:center; margin-top:14px; }
+
+  /* === Config overlay (simulated) === */
+  .config-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.8);
+    display:flex; align-items:center; justify-content:center;
+    z-index: 10;
+    opacity:0; pointer-events:none;
+    transition: opacity 0.3s;
+    backdrop-filter: blur(4px);
+  }
+  .config-overlay.show { opacity:1; pointer-events:auto; }
+  .config-dialog {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px 24px;
+    width: 400px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+  .config-dialog h3 { font-size: 16px; margin-bottom: 6px; }
+  .config-dialog p { font-size: 12px; color:var(--text-dim); margin-bottom: 18px; line-height:1.5; }
+  .config-spinner {
+    width: 28px; height: 28px; border: 3px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin: 0 auto 14px;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .config-done-icon {
+    font-size: 36px; color: var(--green); margin-bottom: 8px;
+  }
+  .config-progress {
+    height:4px; background:var(--border); border-radius:2px;
+    margin: 14px 0; overflow:hidden;
+  }
+  .config-progress-bar {
+    height:100%; background:var(--accent); border-radius:2px;
+    width:0%; transition:width 0.3s;
+  }
+
+  /* === Step 2 ======================================== */
+  .s2-header { text-align:center; margin-bottom: 8px; }
+  .s2-header h2 { font-size:19px; font-weight:700; margin-bottom:3px; }
+  .s2-header p  { font-size:13px; color:var(--text-dim); }
+
+  /* === Glow preview area - large, realistic === */
+  .glow-previews {
+    display:flex; flex-direction:column; gap: 10px;
+    flex:1; justify-content:center;
+  }
+  .glow-item {
+    display:flex; align-items:center; gap: 14px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    transition: all 0.4s;
+    position:relative;
+  }
+  .glow-item.active-preview {
+    border-color: rgba(255,255,255,0.18);
+    background: #1c1c1c;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+  }
+  .glow-item.active-preview::after {
+    content:''; position:absolute; left:0; top:8px; bottom:8px;
+    width:3px; border-radius:0 3px 3px 0;
+    transition: background 0.6s;
+  }
+  .glow-item.state-idle::after       { background:var(--orange); }
+  .glow-item.state-processing::after { background:var(--blue); }
+  .glow-item.state-success::after    { background:var(--lime); }
+
+  /* --- Large preview canvas --- */
+  .glow-preview {
+    width: 240px; height: 132px;
+    border-radius: 8px;
+    background: #0a0a0a;
+    flex-shrink:0;
+    position:relative;
+    overflow:hidden;
+    border: 1px solid #1e1e1e;
+  }
+
+  /* Notch glow: MacBook top bezel */
+  .macbook-bezel {
+    position:absolute; left:0; right:0; top:0; bottom:0;
+    background: linear-gradient(180deg, #1d1d1d 0%, #141414 100%);
+  }
+  .macbook-screen {
+    position:absolute; left:14px; right:14px; top:18px; bottom:10px;
+    background: #0a0a0e;
+    border-radius: 3px;
+    border: 1px solid #2a2a2a;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
+  }
+  .macbook-notch {
+    position:absolute;
+    top: 6px; left: 50%; transform: translateX(-50%);
+    width: 60px; height: 14px;
+    background: #0e0e0e;
+    border-radius: 0 0 8px 8px;
+    z-index: 3;
+    border: 1px solid #252525;
+    border-top: none;
+  }
+  .notch-glow-ring {
+    position:absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 78px; height: 22px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    background: transparent;
+    z-index: 2;
+    transition: border-color 0.8s, box-shadow 0.8s;
+  }
+  .glow-item.state-idle .notch-glow-ring {
+    border-color: rgba(255,146,41,0.65);
+    box-shadow: 0 0 16px 4px rgba(255,146,41,0.35), 0 0 6px 2px rgba(255,146,41,0.25);
+  }
+  .glow-item.state-processing .notch-glow-ring {
+    border-color: rgba(0,191,255,0.75);
+    box-shadow: 0 0 20px 5px rgba(0,191,255,0.4), 0 0 8px 3px rgba(0,191,255,0.3);
+  }
+  .glow-item.state-success .notch-glow-ring {
+    border-color: rgba(0,255,82,0.65);
+    box-shadow: 0 0 14px 3px rgba(0,255,82,0.45), 0 0 6px 2px rgba(0,255,82,0.3);
+  }
+
+  /* Cursor glow: MacBook screen + cursor */
+  .cursor-screen {
+    position:absolute; left:14px; right:14px; top:8px; bottom:14px;
+    background: #0a0a0e;
+    border-radius: 3px;
+    border: 1px solid #222;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .cursor-arrow {
+    position:absolute;
+    left:38%; top:42%;
+    width:0; height:0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 10px solid rgba(255,255,255,0.8);
+    z-index:2;
+    pointer-events:none;
+  }
+  .cursor-glow-aura {
+    position:absolute;
+    left:38%; top:42%;
+    transform: translate(-50%, -50%);
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    transition: all 0.8s;
+    z-index:1;
+  }
+  .glow-item.state-idle .cursor-glow-aura {
+    background: radial-gradient(circle at center, rgba(255,146,41,0.5) 0%, rgba(255,146,41,0.15) 30%, transparent 60%);
+  }
+  .glow-item.state-processing .cursor-glow-aura {
+    background: radial-gradient(circle at center, rgba(0,191,255,0.55) 0%, rgba(0,191,255,0.18) 30%, transparent 60%);
+  }
+  .glow-item.state-success .cursor-glow-aura {
+    background: radial-gradient(circle at center, rgba(0,255,82,0.5) 0%, rgba(0,255,82,0.15) 30%, transparent 60%);
+  }
+  .cursor-code-lines {
+    position:absolute; left:14px; right:14px; top:8px; bottom:14px;
+    display:flex; flex-direction:column; gap:6px; align-items:center;
+    justify-content:center; z-index:0;
+  }
+  .code-line {
+    height:2px; background:var(--border); border-radius:1px;
+  }
+
+  /* Menu bar glow: macOS menu bar strip */
+  .menubar-strip {
+    position:absolute; left:0; right:0; top:50%; transform:translateY(-50%);
+    height: 22px;
+    background: linear-gradient(180deg, rgba(40,40,42,0.9), rgba(28,28,30,0.9));
+    display:flex; align-items:center; padding: 0 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .menubar-items {
+    display:flex; align-items:center; gap: 8px;
+    font-size:9px; color:rgba(255,255,255,0.35);
+    flex:1;
+  }
+  .menubar-items .spacer { flex:1; }
+  .menubar-orb-preview {
+    width: 10px; height: 10px; border-radius:50%;
+    transition: all 0.8s;
+    flex-shrink:0;
+  }
+  .glow-item.state-idle .menubar-orb-preview {
+    background: var(--orange);
+    box-shadow: 0 0 10px 3px rgba(255,146,41,0.55), 0 0 4px 1px rgba(255,146,41,0.3);
+  }
+  .glow-item.state-processing .menubar-orb-preview {
+    background: var(--blue);
+    box-shadow: 0 0 12px 4px rgba(0,191,255,0.6), 0 0 5px 2px rgba(0,191,255,0.35);
+  }
+  .glow-item.state-success .menubar-orb-preview {
+    background: var(--lime);
+    box-shadow: 0 0 10px 3px rgba(0,255,82,0.5), 0 0 4px 1px rgba(0,255,82,0.35);
+  }
+
+  /* Disabled glow card (no notch) */
+  .glow-item.disabled-glow {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .glow-item.disabled-glow .glow-preview {
+    filter: grayscale(0.6);
+  }
+  .glow-item.disabled-glow .notch-glow-ring {
+    border-color: rgba(100,100,100,0.3) !important;
+    box-shadow: 0 0 8px 2px rgba(100,100,100,0.15) !important;
+  }
+  .disabled-badge {
+    font-size: 10px; color: var(--text-muted);
+    margin-top: 2px;
+    font-style: italic;
+  }
+
+  /* Info + toggle */
+  .glow-info { flex:1; min-width:0; }
+  .glow-info .name { font-size:14px; font-weight:600; margin-bottom:2px; }
+  .glow-info .desc { font-size:11px; color:var(--text-dim); line-height:1.4; }
+  .glow-toggle { flex-shrink:0; }
+
+  /* State label badge — sits inside the preview area, bottom-right */
+  .state-badge {
+    position:absolute;
+    bottom: 6px; right: 6px;
+    font-size:9px; font-weight:700; letter-spacing:0.8px;
+    padding:3px 7px; border-radius:4px;
+    opacity:0; transition:all 0.4s;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .glow-item.active-preview .state-badge { opacity:1; }
+  .state-badge.idle-badge       { color:var(--orange); background:rgba(20,20,20,0.85); border:1px solid rgba(255,146,41,0.4); }
+  .state-badge.processing-badge { color:var(--blue);   background:rgba(20,20,20,0.85); border:1px solid rgba(0,191,255,0.4); }
+  .state-badge.success-badge    { color:var(--lime);   background:rgba(20,20,20,0.85); border:1px solid rgba(0,255,82,0.4); }
+
+  /* === Toggle === */
+  .toggle {
+    width:38px; height:22px; border-radius:11px;
+    background:#3a3a3a; position:relative;
+    cursor:pointer; transition:background 0.2s; border:none;
+  }
+  .toggle.on { background:var(--accent); }
+  .toggle::after {
+    content:''; position:absolute; width:18px; height:18px;
+    border-radius:50%; background:#fff; top:2px; left:2px;
+    transition:transform 0.2s;
+  }
+  .toggle.on::after { transform:translateX(16px); }
+  .toggle.disabled {
+    opacity:0.35; cursor:not-allowed; pointer-events:none;
+  }
+
+  /* === Progress dots === */
+  .seq-progress {
+    display:flex; gap:6px; justify-content:center; margin-top:8px;
+  }
+  .seq-dot {
+    width:6px; height:6px; border-radius:50%;
+    background:var(--border); transition:background 0.3s;
+  }
+  .seq-dot.done { background:var(--green); }
+  .seq-dot.current { background:var(--accent); box-shadow:0 0 6px rgba(59,130,246,0.6); }
+
+  .auto-progress {
+    text-align:center; margin-top:4px;
+    font-size:11px; color:var(--text-dim);
+  }
+  .auto-progress .timer { display:inline-block; width:20px; text-align:center; font-weight:600; }
+  .auto-progress .phase { color:var(--accent); font-weight:500; }
+
+  /* === Bottom bar === */
+  .bottom-bar {
+    height:42px; display:flex; align-items:center; justify-content:flex-end;
+    padding:0 16px; border-top:1px solid var(--border); gap:10px;
+  }
+  .btn {
+    padding:6px 16px; border-radius:6px;
+    font-size:12px; font-weight:500;
+    cursor:pointer; border:none;
+    transition:all 0.15s; font-family:inherit;
+  }
+  .btn-ghost { background:transparent; color:var(--text-dim); }
+  .btn-ghost:hover { background:rgba(255,255,255,0.06); color:var(--text); }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-primary:hover { background:#2563eb; }
+  .btn-secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+  .btn-secondary:hover { border-color:#555; }
+
+  /* === Animations === */
+  @keyframes breathe {
+    0%,100% { opacity:0.5; transform: scale(0.92); }
+    50%     { opacity:1;   transform: scale(1); }
+  }
+  @keyframes breathePulse {
+    0%,100% { opacity:0.45; transform: scale(0.88); }
+    50%     { opacity:1;   transform: scale(1.04); }
+  }
+  .breathing   { animation: breathe 2.35s ease-in-out infinite; }
+  .fast-pulse  { animation: breathePulse 0.6s ease-in-out infinite; }
+
+  /* notch ring uses scale on a fixed container */
+  .notch-ring-anim    { animation: breathe 2.35s ease-in-out infinite; }
+  .notch-ring-pulse   { animation: breathePulse 0.6s ease-in-out infinite; }
+
+  .cursor-aura-anim   { animation: breathe 2.35s ease-in-out infinite; }
+  .cursor-aura-pulse  { animation: breathePulse 0.6s ease-in-out infinite; }
+
+  .orb-anim           { animation: breathe 2.35s ease-in-out infinite; }
+  .orb-pulse          { animation: breathePulse 0.6s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<div class="window" id="app">
+  <!-- Titlebar -->
+  <div class="window__titlebar" id="titlebar">
+    <div class="traffic-lights">
+      <div class="traffic-light tl-close"></div>
+      <div class="traffic-light tl-min"></div>
+      <div class="traffic-light tl-max"></div>
+    </div>
+    <div class="window__title" id="title-text">Liang · Setup</div>
+  </div>
+
+  <!-- Step dots -->
+  <div class="steps-bar">
+    <span class="step-dot active" id="dot1">1</span>
+    <span class="step-line" id="line1"></span>
+    <span class="step-dot" id="dot2">2</span>
+  </div>
+
+  <div class="content" id="content">
+    <!-- ============= STEP 1 ============= -->
+    <div class="step-panel visible" id="panel1">
+      <div class="s1-header">
+        <h2>Connect Your Coding Agent</h2>
+        <p>Liang needs at least one coding agent to monitor your AI workflow.</p>
+      </div>
+
+      <!-- Cursor main card -->
+      <div class="cursor-main-card" id="cursor-card">
+        <div class="cursor-icon">C</div>
+        <div class="cursor-name">Cursor</div>
+        <div class="cursor-status" id="cursor-status-text">Not configured</div>
+        <button class="btn btn-primary" id="cursor-config-btn" onclick="openConfigDialog()">
+          Configure Cursor →
+        </button>
+      </div>
+
+      <!-- Other agents (text only) -->
+      <div class="other-agents">
+        Claude Code &nbsp;<span class="divider">·</span>&nbsp;
+        Codex CLI &nbsp;<span class="divider">·</span>&nbsp;
+        CodeBuddy &nbsp;<span class="divider">·</span>&nbsp;
+        Trae
+        <br>Coming soon...
+      </div>
+
+      <div class="s1-actions">
+        <button class="btn btn-ghost" onclick="skipCursor()" style="font-size:12px;">
+          Skip for now — configure later in Settings
+        </button>
+      </div>
+
+      <!-- Config overlay -->
+      <div class="config-overlay" id="config-overlay">
+        <div class="config-dialog">
+          <div id="config-step1">
+            <h3>Configure Cursor Hooks</h3>
+            <p>Liang will write hooks configuration to<br><code style="color:var(--accent);font-size:11px;">~/.cursor/hooks.json</code><br>and install the bridge script.</p>
+            <div class="config-progress"><div class="config-progress-bar" id="config-bar"></div></div>
+            <p style="font-size:11px;color:var(--text-muted);" id="config-msg">Preparing...</p>
+            <button class="btn btn-primary" id="config-install-btn" onclick="startConfig()" style="margin-right:8px;">
+              Auto Install
+            </button>
+            <button class="btn btn-secondary" onclick="closeConfigDialog()">Cancel</button>
+          </div>
+          <div id="config-step2" style="display:none;">
+            <div class="config-spinner"></div>
+            <h3>Installing...</h3>
+            <p id="config-step2-msg">Writing hooks configuration...</p>
+          </div>
+          <div id="config-step3" style="display:none;">
+            <div class="config-done-icon">✓</div>
+            <h3>Cursor Connected!</h3>
+            <p>Hooks installed successfully.<br>You're all set.</p>
+            <button class="btn btn-primary" onclick="finishConfig()">Continue</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============= STEP 2 ============= -->
+    <div class="step-panel" id="panel2">
+      <div class="s2-header">
+        <h2>Choose Your Glow Effects</h2>
+        <p>Preview each effect — toggle the ones you want to enable.</p>
+      </div>
+
+      <div class="glow-previews">
+        <!-- Notch Glow -->
+        <div class="glow-item state-idle active-preview" id="glow-notch">
+          <div class="glow-preview">
+            <div class="macbook-bezel">
+              <div class="macbook-screen"></div>
+              <div class="notch-glow-ring"></div>
+              <div class="macbook-notch"></div>
+            </div>
+            <span class="state-badge idle-badge" id="notch-badge">IDLE</span>
+          </div>
+          <div class="glow-info">
+            <div class="name">Notch Glow</div>
+            <div class="desc">Color glow outlines the MacBook notch, reflecting AI state in real time</div>
+          </div>
+          <button class="toggle on" id="notch-toggle" onclick="toggleGlow('notch')"></button>
+        </div>
+
+        <!-- Cursor Glow -->
+        <div class="glow-item state-idle" id="glow-cursor">
+          <div class="glow-preview">
+            <div class="cursor-screen">
+              <div class="cursor-code-lines">
+                <div class="code-line" style="width:60%"></div>
+                <div class="code-line" style="width:80%"></div>
+                <div class="code-line" style="width:40%"></div>
+                <div class="code-line" style="width:70%"></div>
+              </div>
+              <div class="cursor-arrow"></div>
+              <div class="cursor-glow-aura"></div>
+            </div>
+            <span class="state-badge idle-badge" id="cursor-badge">IDLE</span>
+          </div>
+          <div class="glow-info">
+            <div class="name">Cursor Glow</div>
+            <div class="desc">A luminous radial aura that follows your mouse pointer</div>
+          </div>
+          <button class="toggle on" id="cursor-toggle" onclick="toggleGlow('cursor')"></button>
+        </div>
+
+        <!-- Menu Bar Status Color -->
+        <div class="glow-item state-idle" id="glow-menubar">
+          <div class="glow-preview">
+            <div class="menubar-strip">
+              <div class="menubar-items">
+                <span>􀣺</span><span>File</span><span>Edit</span><span>View</span>
+                <span class="spacer"></span>
+                <span style="font-size:8px;">􀌗</span>
+                <div class="menubar-orb-preview"></div>
+                <span style="font-size:8px;">Mon 12:38</span>
+              </div>
+            </div>
+            <span class="state-badge idle-badge" id="menubar-badge">IDLE</span>
+          </div>
+          <div class="glow-info">
+            <div class="name">Menu Bar Status Color</div>
+            <div class="desc">The Liang icon in your menu bar pulses and changes color with AI state</div>
+          </div>
+          <button class="toggle off" id="menubar-toggle" onclick="toggleGlow('menubar')"></button>
+        </div>
+      </div>
+
+      <!-- Sequence dots + timer -->
+      <div class="seq-progress">
+        <div class="seq-dot current" id="sq-notch"></div>
+        <div class="seq-dot" id="sq-cursor"></div>
+        <div class="seq-dot" id="sq-menubar"></div>
+      </div>
+      <div class="auto-progress">
+        <span class="phase" id="phase-text">Notch Glow</span>
+        &nbsp;·&nbsp;
+        <span class="timer" id="timer">3</span>s
+        &nbsp;·&nbsp;
+        <span style="color:var(--text-muted);">looping</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="bottom-bar" id="bottombar">
+    <button class="btn btn-ghost" id="btn-later" onclick="skipAll()">Skip for now</button>
+    <button class="btn btn-secondary" id="btn-back" style="display:none" onclick="goToStep(1)">← Back</button>
+    <button class="btn btn-primary" id="btn-next" onclick="goToStep(2)">Next →</button>
+    <button class="btn btn-primary" id="btn-done" style="display:none" onclick="finishOnboarding()">Start Using Liang</button>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+let currentStep = 1;
+let cursorConfigured = false;
+let currentGlow = 0;     // 0=notch, 1=cursor, 2=menubar
+let currentStateIdx = 0; // 0=idle, 1=processing, 2=success
+let countdown = 3;
+let timerInterval = null;
+let autoPlayRunning = false;
+
+const glowIds = ['notch', 'cursor', 'menubar'];
+const stateNames = ['idle', 'processing', 'success'];
+
+// ===== STEP NAVIGATION =====
+function goToStep(step) {
+  if (step === currentStep) return;
+  currentStep = step;
+  updateUI();
+  if (step === 2) startAutoPlay();
+  else stopAutoPlay();
+}
+
+function updateUI() {
+  const dot1 = document.getElementById('dot1');
+  const dot2 = document.getElementById('dot2');
+  const line1 = document.getElementById('line1');
+  const panel1 = document.getElementById('panel1');
+  const panel2 = document.getElementById('panel2');
+  const btnNext = document.getElementById('btn-next');
+  const btnBack = document.getElementById('btn-back');
+  const btnDone = document.getElementById('btn-done');
+  const btnLater = document.getElementById('btn-later');
+  const titlebar = document.getElementById('titlebar');
+  const titleText = document.getElementById('title-text');
+
+  if (currentStep === 1) {
+    dot1.className = 'step-dot active';
+    dot2.className = 'step-dot';
+    line1.className = 'step-line';
+    panel1.classList.add('visible');
+    panel2.classList.remove('visible');
+    btnNext.style.display = '';
+    btnBack.style.display = 'none';
+    btnDone.style.display = 'none';
+    btnLater.style.display = '';
+    btnNext.textContent = 'Next →';
+    titlebar.classList.remove('has-border');
+    titleText.textContent = 'Liang · Setup';
+  } else {
+    dot1.className = 'step-dot done';
+    dot2.className = 'step-dot active';
+    line1.className = 'step-line done';
+    panel1.classList.remove('visible');
+    panel2.classList.add('visible');
+    btnNext.style.display = 'none';
+    btnBack.style.display = '';
+    btnDone.style.display = '';
+    btnLater.style.display = '';
+    titlebar.classList.add('has-border');
+  }
+}
+
+// ===== STEP 1: CURSOR CONFIG =====
+function openConfigDialog() {
+  document.getElementById('config-overlay').classList.add('show');
+  document.getElementById('config-step1').style.display = '';
+  document.getElementById('config-step2').style.display = 'none';
+  document.getElementById('config-step3').style.display = 'none';
+  document.getElementById('config-bar').style.width = '0%';
+  document.getElementById('config-msg').textContent = 'Preparing...';
+}
+
+function closeConfigDialog() {
+  document.getElementById('config-overlay').classList.remove('show');
+}
+
+function startConfig() {
+  document.getElementById('config-step1').style.display = 'none';
+  document.getElementById('config-step2').style.display = '';
+  document.getElementById('config-step3').style.display = 'none';
+
+  const bar = document.getElementById('config-bar');
+  const msg = document.getElementById('config-step2-msg');
+  const steps = [
+    { pct: 30, text: 'Copying bridge script...' },
+    { pct: 60, text: 'Writing hooks.json...' },
+    { pct: 85, text: 'Setting permissions...' },
+    { pct: 100, text: 'Done!' },
+  ];
+  let i = 0;
+  function nextBar() {
+    if (i < steps.length) {
+      bar.style.width = steps[i].pct + '%';
+      msg.textContent = steps[i].text;
+      i++;
+      setTimeout(nextBar, 600);
+    } else {
+      // Show success
+      setTimeout(() => {
+        document.getElementById('config-step2').style.display = 'none';
+        document.getElementById('config-step3').style.display = '';
+      }, 400);
+    }
+  }
+  nextBar();
+}
+
+function finishConfig() {
+  cursorConfigured = true;
+  document.getElementById('config-overlay').classList.remove('show');
+
+  // Update cursor card to connected state
+  const card = document.getElementById('cursor-card');
+  card.classList.add('connected');
+  document.getElementById('cursor-status-text').textContent = 'Connected';
+  const cfgBtn = document.getElementById('cursor-config-btn');
+  cfgBtn.textContent = 'Connected ✓';
+  cfgBtn.className = 'btn btn-secondary';
+  cfgBtn.onclick = null;
+  cfgBtn.style.cursor = 'default';
+  cfgBtn.style.opacity = '0.6';
+}
+
+function skipCursor() {
+  // Go to step 2 even without configuring cursor
+  goToStep(2);
+}
+
+// ===== STEP 2: GLOW CONFIG =====
+
+function toggleGlow(type) {
+  const toggle = document.getElementById(type + '-toggle');
+  toggle.classList.toggle('on');
+}
+
+function startAutoPlay() {
+  currentGlow = 0;
+  currentStateIdx = 0;
+  autoPlayRunning = true;
+  showState(0, 0);
+  startCountdown();
+}
+
+function stopAutoPlay() {
+  autoPlayRunning = false;
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  document.querySelectorAll('.glow-item').forEach(el => el.classList.remove('active-preview'));
+  clearAllAnimations();
+}
+
+function clearAllAnimations() {
+  document.querySelectorAll('.notch-glow-ring, .cursor-glow-aura, .menubar-orb-preview').forEach(el => {
+    el.classList.remove('notch-ring-anim', 'notch-ring-pulse', 'cursor-aura-anim', 'cursor-aura-pulse', 'orb-anim', 'orb-pulse');
+    el.style.opacity = '';
+    el.style.transform = '';
+  });
+}
+
+function showState(glowIdx, stateIdx) {
+  currentGlow = glowIdx;
+  currentStateIdx = stateIdx;
+
+  const stateName = stateNames[stateIdx];
+  const gid = glowIds[glowIdx];
+
+  // Highlight active card
+  document.querySelectorAll('.glow-item').forEach(el => {
+    el.classList.remove('active-preview', 'state-idle', 'state-processing', 'state-success');
+  });
+  const activeEl = document.getElementById('glow-' + gid);
+  if (!activeEl.classList.contains('disabled-glow')) {
+    activeEl.classList.add('active-preview');
+  }
+  activeEl.classList.add('state-' + stateName);
+
+  // Update state badges
+  document.querySelectorAll('.state-badge').forEach(b => { b.style.display = 'none'; });
+  const badge = document.getElementById(gid + '-badge');
+  badge.style.display = '';
+  badge.className = 'state-badge ' + stateName + '-badge';
+  badge.textContent = stateName.toUpperCase();
+
+  // === Animations ===
+  clearAllAnimations();
+
+  const ringEl = activeEl.querySelector('.notch-glow-ring');
+  const auraEl = activeEl.querySelector('.cursor-glow-aura');
+  const orbEl = activeEl.querySelector('.menubar-orb-preview');
+
+  if (stateName === 'idle' || stateName === 'processing') {
+    if (ringEl) ringEl.classList.add('notch-ring-anim');
+    if (auraEl) auraEl.classList.add('cursor-aura-anim');
+    if (orbEl) orbEl.classList.add('orb-anim');
+  } else if (stateName === 'success') {
+    if (ringEl) ringEl.classList.add('notch-ring-pulse');
+    if (auraEl) auraEl.classList.add('cursor-aura-pulse');
+    if (orbEl) orbEl.classList.add('orb-pulse');
+  }
+
+  // Phase text
+  const glowNames = ['Notch Glow', 'Cursor Glow', 'Menu Bar Color'];
+  document.getElementById('phase-text').textContent = glowNames[glowIdx];
+
+  // Sequence dots
+  document.querySelectorAll('.seq-dot').forEach((el, i) => {
+    el.classList.remove('current', 'done');
+    if (i < glowIdx) el.classList.add('done');
+    if (i === glowIdx) el.classList.add('current');
+  });
+
+  countdown = 3;
+  document.getElementById('timer').textContent = countdown;
+  document.querySelector('.auto-progress span:last-child').style.display = '';
+  document.getElementById('timer').style.display = 'inline-block';
+}
+
+function advanceState() {
+  if (!autoPlayRunning) return;
+
+  if (currentStateIdx < 2) {
+    currentStateIdx++;
+    showState(currentGlow, currentStateIdx);
+  } else {
+    // Next glow, loop back
+    currentStateIdx = 0;
+    let next = (currentGlow + 1) % 3;
+    currentGlow = next;
+    showState(currentGlow, currentStateIdx);
+  }
+}
+
+function startCountdown() {
+  if (timerInterval) clearInterval(timerInterval);
+  countdown = 3;
+  document.getElementById('timer').textContent = countdown;
+
+  timerInterval = setInterval(() => {
+    countdown--;
+    document.getElementById('timer').textContent = countdown;
+    if (countdown <= 0 && autoPlayRunning) {
+      advanceState();
+      if (autoPlayRunning) {
+        countdown = 3;
+        document.getElementById('timer').textContent = countdown;
+      }
+    }
+  }, 1000);
+}
+
+// ===== FINISH =====
+function skipAll() {
+  stopAutoPlay();
+  if (confirm('Skip setup? You can configure everything later in Settings.\nDefault glows will be applied based on your Mac.')) {
+    // Simulate finish with defaults
+    document.querySelector('.window').style.opacity = '0.4';
+    document.querySelector('.window').style.transform = 'scale(0.97)';
+    document.querySelector('.window').style.transition = 'all 0.25s';
+  }
+}
+
+function finishOnboarding() {
+  stopAutoPlay();
+
+  const notchOn = document.getElementById('notch-toggle').classList.contains('on');
+  const cursorOn = document.getElementById('cursor-toggle').classList.contains('on');
+  const menubarOn = document.getElementById('menubar-toggle').classList.contains('on');
+
+  const parts = [];
+  if (notchOn) parts.push('Notch Glow');
+  if (cursorOn) parts.push('Cursor Glow');
+  if (menubarOn) parts.push('Menu Bar Color');
+
+  alert(`✓ Onboarding complete! \n\nhasCompletedOnboarding = true\nGlows enabled: ${parts.join(', ')}\n\n(App would now start glows and close this window.)`);
+
+  document.querySelector('.window').style.opacity = '0.35';
+  document.querySelector('.window').style.transform = 'scale(0.96)';
+  document.querySelector('.window').style.transition = 'all 0.3s';
+}
+
+// ===== INIT =====
+updateUI();
+
+// Allow ?step=N to start at a specific step (for screenshot testing)
+const params = new URLSearchParams(window.location.search);
+const initialStep = parseInt(params.get('step')) || 1;
+if (initialStep > 1) {
+  cursorConfigured = true;
+  finishConfig();
+  setTimeout(() => goToStep(initialStep), 100);
+}
+</script>
+
+</body>
+</html>

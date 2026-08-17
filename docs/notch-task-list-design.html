@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liang 拓展区任务列表面板设计稿</title>
+  <style>
+    :root {
+      --bg-panel: #000000;
+      --bg-panel-elevated: #151516;
+      --bg-row-hover: rgba(255,255,255,0.06);
+      --text-primary: #F5F5F7;
+      --text-secondary: #98989D;
+      --text-tertiary: #636366;
+      --border: rgba(255,255,255,0.08);
+      --radius-panel: 18px;
+      --radius-row: 8px;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --status-processing: #FFCC00;
+      --status-success: #34C759;
+      --status-error: #FF453A;
+      --status-waiting: #5AC8FA;
+      --status-idle: #98989D;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: #2a2a2c;
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 40px 24px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 8px;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 13px;
+      margin-bottom: 32px;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .design-card {
+      background: rgba(0,0,0,0.3);
+      border: 0.5px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .design-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+
+    .design-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    /* 模拟拓展面板外框 */
+    .notch-panel {
+      width: 392px;
+      height: 260px;
+      margin: 0 auto;
+      background: var(--bg-panel);
+      border-radius: var(--radius-panel);
+      position: relative;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 0.5px rgba(255,255,255,0.08),
+        0 12px 40px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-bottom: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .task-list {
+      list-style: none;
+      margin: 0;
+      padding: 8px 12px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .task-list::-webkit-scrollbar { width: 0; }
+
+    /* 通用任务行 */
+    .task-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-row);
+      min-height: 36px;
+      transition: background 150ms ease;
+    }
+
+    .task-row:hover { background: var(--bg-row-hover); }
+
+    .task-icon {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .task-name {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    .task-meta {
+      flex-shrink: 0;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    /* ===== 方案 A：极简状态点 ===== */
+    .option-a .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .option-a .status-dot.processing {
+      background: var(--status-processing);
+      box-shadow: 0 0 6px var(--status-processing);
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    .option-a .status-dot.success { background: var(--status-success); }
+    .option-a .status-dot.error { background: var(--status-error); }
+    .option-a .status-dot.waiting { background: var(--status-waiting); animation: breathe 2s ease-in-out infinite; }
+    .option-a .status-dot.idle { background: var(--status-idle); }
+
+    /* ===== 方案 B：动态图标 + 状态徽标 ===== */
+    .option-b .task-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+    .option-b .task-row { gap: 12px; }
+
+    .status-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+    .status-badge.processing { color: var(--status-processing); background: rgba(255,204,0,0.12); }
+    .status-badge.success { color: var(--status-success); background: rgba(52,199,89,0.12); }
+    .status-badge.error { color: var(--status-error); background: rgba(255,69,58,0.12); }
+    .status-badge.waiting { color: var(--status-waiting); background: rgba(90,200,250,0.12); }
+    .status-badge.idle { color: var(--text-secondary); background: rgba(255,255,255,0.08); }
+
+    /* ===== 方案 C：进度环 + 时间戳 ===== */
+    .option-c .task-row { padding: 9px 10px; }
+    .option-c .task-icon { width: 20px; height: 20px; }
+    .option-c .task-name { font-size: 12px; }
+    .option-c .task-meta { font-size: 10px; color: var(--text-tertiary); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    @keyframes breathe {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes check-pop {
+      0% { transform: scale(0.8); opacity: 0.6; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes ring-progress {
+      0% { stroke-dashoffset: 44; transform: rotate(0deg); }
+      100% { stroke-dashoffset: 0; transform: rotate(360deg); }
+    }
+
+    .spin { animation: spin 1.2s linear infinite; transform-origin: center; }
+    .check-anim { animation: check-pop 0.4s ease-out; }
+    .progress-ring circle.progress {
+      stroke-dasharray: 44;
+      animation: ring-progress 1.4s linear infinite;
+      transform-origin: center;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-tertiary);
+      font-size: 12px;
+      gap: 8px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-panel: #FFFFFF;
+        --bg-panel-elevated: #F5F5F7;
+        --bg-row-hover: rgba(0,0,0,0.04);
+        --text-primary: #1D1D1F;
+        --text-secondary: #6E6E73;
+        --text-tertiary: #AEAEB2;
+        --border: rgba(0,0,0,0.08);
+      }
+      body { background: #E8E8ED; }
+      .design-card { background: rgba(255,255,255,0.7); }
+      .notch-panel {
+        box-shadow:
+          0 0 0 0.5px rgba(0,0,0,0.08),
+          0 12px 40px rgba(0,0,0,0.12);
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Liang 拓展区任务列表面板设计</h1>
+  <p class="subtitle">按任务去重 · 一行一个任务 · 过长文本省略 · 状态图标带微动效</p>
+
+  <div class="gallery">
+
+    <!-- 方案 A：极简状态点 -->
+    <div class="design-card">
+      <div class="design-title">方案 A：极简状态点</div>
+      <div class="design-desc">左侧为纯色状态点（processing 呼吸/脉冲，waiting 呼吸），右侧任务名。最克制，信息密度最高，适合只想扫一眼的用户。</div>
+      <div class="notch-panel option-a">
+        <div class="panel-header">
+          <span>最近任务</span>
+          <span style="font-weight:400">10</span>
+        </div>
+        <ul class="task-list" id="list-a"></ul>
+      </div>
+    </div>
+
+    <!-- 方案 B：动态图标 + 状态徽标 -->
+    <div class="design-card">
+      <div class="design-title">方案 B：动态图标 + 状态徽标</div>
+      <div class="design-desc">每个状态配独立 SF Symbols 风格图标（processing 转圈、success 弹跳勾选、error 感叹号），最右侧显式状态标签。一眼可读性最强。</div>
+      <div class="notch-panel option-b">
+        <div class="panel-header">
+          <span>最近任务</span>
+          <span style="font-weight:400">10</span>
+        </div>
+        <ul class="task-list" id="list-b"></ul>
+      </div>
+    </div>
+
+    <!-- 方案 C：进度环 + 时间戳 -->
+    <div class="design-card">
+      <div class="design-title">方案 C：进度环 + 时间戳</div>
+      <div class="design-desc">左侧用环形进度/状态指示器，右侧任务名 + 相对时间。更像活动监视器/控制中心风格，适合需要知道“多久前”的场景。</div>
+      <div class="notch-panel option-c">
+        <div class="panel-header">
+          <span>最近任务</span>
+          <span style="font-weight:400">10</span>
+        </div>
+        <ul class="task-list" id="list-c"></ul>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const tasks = [
+      { name: "重构 AuthService 登录流程", status: "processing", time: "刚刚" },
+      { name: "修复 Dashboard 图表渲染问题", status: "processing", time: "1 分钟前" },
+      { name: "编写用户协议 Markdown", status: "waiting", time: "3 分钟前" },
+      { name: "Cursor 插件 API 联调", status: "success", time: "5 分钟前" },
+      { name: "优化首页加载性能", status: "error", time: "8 分钟前" },
+      { name: "更新依赖到最新版本", status: "idle", time: "12 分钟前" },
+      { name: "设计新 Logo 矢量稿", status: "waiting", time: "15 分钟前" },
+      { name: "修复暗黑模式颜色不统一", status: "success", time: "20 分钟前" },
+      { name: "集成 Sentry 错误上报", status: "error", time: "25 分钟前" },
+      { name: "整理项目文档结构", status: "idle", time: "30 分钟前" }
+    ];
+
+    const colors = {
+      processing: "#FFCC00",
+      success: "#34C759",
+      error: "#FF453A",
+      waiting: "#5AC8FA",
+      idle: "#98989D"
+    };
+
+    const labels = {
+      processing: "进行中",
+      success: "完成",
+      error: "错误",
+      waiting: "等待",
+      idle: "空闲"
+    };
+
+    function renderA() {
+      const list = document.getElementById('list-a');
+      list.innerHTML = tasks.map(t => `
+        <li class="task-row">
+          <div class="task-icon">
+            <div class="status-dot ${t.status}"></div>
+          </div>
+          <div class="task-name" title="${t.name}">${t.name}</div>
+          <div class="task-meta">${t.time}</div>
+        </li>
+      `).join('');
+    }
+
+    function iconSvg(status) {
+      const c = colors[status];
+      if (status === 'processing') {
+        return `<svg viewBox="0 0 18 18" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round">
+          <circle cx="9" cy="9" r="7" stroke-opacity="0.25"></circle>
+          <path d="M9 2 A7 7 0 0 1 16 9" class="spin"></path>
+        </svg>`;
+      }
+      if (status === 'success') {
+        return `<svg viewBox="0 0 18 18" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="9" r="8" class="check-anim" style="animation-delay:0.05s"></circle>
+          <path d="M5.5 9.5 L8 12 L12.5 6.5" class="check-anim"></path>
+        </svg>`;
+      }
+      if (status === 'error') {
+        return `<svg viewBox="0 0 18 18" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round">
+          <circle cx="9" cy="9" r="8"></circle>
+          <path d="M9 6 V10" style="animation:pulse 1.2s ease-in-out infinite"></path>
+          <circle cx="9" cy="13" r="1" fill="${c}"></circle>
+        </svg>`;
+      }
+      if (status === 'waiting') {
+        return `<svg viewBox="0 0 18 18" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round">
+          <circle cx="9" cy="9" r="8" style="opacity:0.5"></circle>
+          <path d="M9 5 V9 L12 11" class="spin" style="animation-duration:2s;transform-origin:9px 9px"></path>
+        </svg>`;
+      }
+      return `<svg viewBox="0 0 18 18" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round">
+        <circle cx="9" cy="9" r="8"></circle>
+        <path d="M9 6 V9 L11 11"></path>
+      </svg>`;
+    }
+
+    function renderB() {
+      const list = document.getElementById('list-b');
+      list.innerHTML = tasks.map(t => `
+        <li class="task-row">
+          <div class="task-icon">${iconSvg(t.status)}</div>
+          <div class="task-name" title="${t.name}">${t.name}</div>
+          <div class="status-badge ${t.status}">${labels[t.status]}</div>
+        </li>
+      `).join('');
+    }
+
+    function ringSvg(status) {
+      const c = colors[status];
+      if (status === 'processing') {
+        return `<svg class="progress-ring" viewBox="0 0 20 20" width="20" height="20">
+          <circle cx="10" cy="10" r="8" fill="none" stroke="${c}" stroke-opacity="0.2" stroke-width="2"></circle>
+          <circle class="progress" cx="10" cy="10" r="7" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"></circle>
+        </svg>`;
+      }
+      const fill = status === 'success' ? colors.success : status === 'error' ? colors.error : status === 'waiting' ? colors.waiting : colors.idle;
+      return `<svg viewBox="0 0 20 20" width="20" height="20">
+        <circle cx="10" cy="10" r="7" fill="${fill}" fill-opacity="0.2" stroke="${fill}" stroke-width="1.5"></circle>
+        ${status === 'success' ? '<path d="M7 10 L9.5 12.5 L14 7.5" fill="none" stroke="' + fill + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' : ''}
+        ${status === 'error' ? '<path d="M7 7 L13 13 M13 7 L7 13" fill="none" stroke="' + fill + '" stroke-width="1.5" stroke-linecap="round"/>' : ''}
+        ${status === 'waiting' ? '<circle cx="10" cy="10" r="2.5" fill="' + fill + '"/>' : ''}
+      </svg>`;
+    }
+
+    function renderC() {
+      const list = document.getElementById('list-c');
+      list.innerHTML = tasks.map(t => `
+        <li class="task-row">
+          <div class="task-icon">${ringSvg(t.status)}</div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+            <div class="task-name" title="${t.name}">${t.name}</div>
+            <div class="task-meta">${labels[t.status]} · ${t.time}</div>
+          </div>
+        </li>
+      `).join('');
+    }
+
+    renderA();
+    renderB();
+    renderC();
+  </script>
+</body>
+</html>

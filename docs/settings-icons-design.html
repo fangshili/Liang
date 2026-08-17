@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设置页图标设计方案</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+            background: #f5f5f7;
+            padding: 40px;
+            color: #1d1d1f;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            color: #6e6e73;
+            font-size: 15px;
+            margin-bottom: 32px;
+        }
+        .schemes {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        .scheme {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .scheme-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .scheme-name {
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .scheme-desc {
+            font-size: 12px;
+            color: #86868b;
+            margin-top: 2px;
+        }
+        .sidebar {
+            width: 220px;
+            background: #fbfbfd;
+            padding: 16px 12px;
+            border-right: 1px solid #e5e5e5;
+        }
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin-bottom: 2px;
+            font-size: 13px;
+        }
+        .sidebar-item.selected {
+            background: #007aff;
+            color: #fff;
+        }
+        .icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mock-window {
+            display: flex;
+            height: 320px;
+        }
+        .content {
+            flex: 1;
+            padding: 24px;
+            background: #fff;
+        }
+        .content-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .card {
+            background: #f5f5f7;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            padding: 4px 0;
+        }
+
+        /* Scheme A: SF Symbols filled, monochrome */
+        .scheme-a .icon { color: #007aff; }
+
+        /* Scheme B: circular colored background */
+        .scheme-b .icon-bg {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            color: #fff;
+        }
+        .scheme-b .icon-bg.glow { background: linear-gradient(135deg, #ff9500, #ff2d55); }
+        .scheme-b .icon-bg.agent { background: linear-gradient(135deg, #5856d6, #af52de); }
+        .scheme-b .icon-bg.colors { background: linear-gradient(135deg, #34c759, #00c7be); }
+        .scheme-b .icon-bg.advanced { background: linear-gradient(135deg, #8e8e93, #636366); }
+        .scheme-b .icon-bg.about { background: linear-gradient(135deg, #007aff, #5ac8fa); }
+
+        /* Scheme C: minimal stroke */
+        .scheme-c .icon {
+            color: #1d1d1f;
+            stroke-width: 1.5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>设置页图标设计方案</h1>
+    <p class="subtitle">macOS System Settings 风格侧边栏图标，共 3 套方案</p>
+
+    <div class="schemes">
+        <!-- Scheme A -->
+        <div class="scheme scheme-a">
+            <div class="scheme-header">
+                <div class="scheme-name">方案 A：统一填充风格</div>
+                <div class="scheme-desc">SF Symbols 填充版本，蓝色强调色，最贴近原生 macOS</div>
+            </div>
+            <div class="mock-window">
+                <div class="sidebar">
+                    <div class="sidebar-item selected">
+                        <span class="icon">☀</span>
+                        <span>光晕</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <span class="icon">◆</span>
+                        <span>Coding Agent</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <span class="icon">◐</span>
+                        <span>状态颜色</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <span class="icon">⚙</span>
+                        <span>高级</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <span class="icon">ⓘ</span>
+                        <span>关于</span>
+                    </div>
+                </div>
+                <div class="content">
+                    <div class="content-title">光晕</div>
+                    <div class="card">
+                        <div class="card-title">刘海</div>
+                        <div class="toggle"><span>启用刘海光晕</span><span>━━</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scheme B -->
+        <div class="scheme scheme-b">
+            <div class="scheme-header">
+                <div class="scheme-name">方案 B：圆形彩色背景</div>
+                <div class="scheme-desc">每个图标放在渐变圆形背景中，更有视觉重量</div>
+            </div>
+            <div class="mock-window">
+                <div class="sidebar">
+                    <div class="sidebar-item selected">
+                        <span class="icon-bg glow">☀</span>
+                        <span>光晕</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <span class="icon-bg agent">▣</span>
+                        <span>Coding Agent</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <span class="icon-bg colors">◐</span>
+                        <span>状态颜色</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <span class="icon-bg advanced">⚙</span>
+                        <span>高级</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <span class="icon-bg about">ⓘ</span>
+                        <span>关于</span>
+                    </div>
+                </div>
+                <div class="content">
+                    <div class="content-title">光晕</div>
+                    <div class="card">
+                        <div class="card-title">刘海</div>
+                        <div class="toggle"><span>启用刘海光晕</span><span>━━</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scheme C -->
+        <div class="scheme scheme-c">
+            <div class="scheme-header">
+                <div class="scheme-name">方案 C：极简线条</div>
+                <div class="scheme-desc">1.5px 线条风格，无填充，最克制、不抢内容焦点</div>
+            </div>
+            <div class="mock-window">
+                <div class="sidebar">
+                    <div class="sidebar-item selected">
+                        <span class="icon">☼</span>
+                        <span>光晕</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <span class="icon">◇</span>
+                        <span>Coding Agent</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <span class="icon">○</span>
+                        <span>状态颜色</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <span class="icon">⚙</span>
+                        <span>高级</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <span class="icon">ⓘ</span>
+                        <span>关于</span>
+                    </div>
+                </div>
+                <div class="content">
+                    <div class="content-title">光晕</div>
+                    <div class="card">
+                        <div class="card-title">刘海</div>
+                        <div class="toggle"><span>启用刘海光晕</span><span>━━</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
