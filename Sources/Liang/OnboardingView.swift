@@ -86,11 +86,15 @@ struct OnboardingRootView: View {
 private enum Step1Alert: Identifiable {
     case installConfirmation
     case cursorNotInstalled
+    case claudeInstallConfirmation
+    case claudeNotInstalled
 
     var id: String {
         switch self {
         case .installConfirmation: return "install"
         case .cursorNotInstalled: return "no-cursor"
+        case .claudeInstallConfirmation: return "claude-install"
+        case .claudeNotInstalled: return "no-claude"
         }
     }
 }
@@ -124,6 +128,12 @@ struct OnboardingStep1View: View {
                     )
                     .frame(maxWidth: 560)
 
+                    ClaudeHeroCard(
+                        onRequestInstall: { activeAlert = .claudeInstallConfirmation },
+                        onClaudeNotInstalled: { activeAlert = .claudeNotInstalled }
+                    )
+                    .frame(maxWidth: 560)
+
                     OtherAgentsCard()
                         .frame(maxWidth: 560)
                 }
@@ -153,6 +163,26 @@ struct OnboardingStep1View: View {
                     primaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledContinue))),
                     secondaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledDownload))) {
                         if let url = URL(string: "https://cursor.com") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                )
+            case .claudeInstallConfirmation:
+                return Alert(
+                    title: Text(I18n.shared.string(.installConfirmTitle)),
+                    message: Text(I18n.shared.string(.claudeInstallConfirmMessage)),
+                    primaryButton: .cancel(Text(I18n.shared.string(.cancel))),
+                    secondaryButton: .default(Text(I18n.shared.string(.autoInstall))) {
+                        ClaudeCodeSetupManager.shared.installAutomatically()
+                    }
+                )
+            case .claudeNotInstalled:
+                return Alert(
+                    title: Text(I18n.shared.string(.onboardingClaudeNotInstalledTitle)),
+                    message: Text(I18n.shared.string(.onboardingClaudeNotInstalledMessage)),
+                    primaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledContinue))),
+                    secondaryButton: .default(Text(I18n.shared.string(.onboardingClaudeNotInstalledDownload))) {
+                        if let url = URL(string: "https://code.claude.com/docs/en/setup") {
                             NSWorkspace.shared.open(url)
                         }
                     }
@@ -196,8 +226,7 @@ struct CursorHeroCard: View {
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
             // Icon
-            CursorLogoShape()
-                .fill(Color.white)
+            IDEImageIcon(ide: .cursor, color: .white)
                 .frame(width: 38, height: 38)
 
             // Details
@@ -251,6 +280,105 @@ struct CursorHeroCard: View {
             onRequestInstall()
         } else {
             onCursorNotInstalled()
+        }
+    }
+}
+
+// MARK: - Claude Code Hero Card
+
+struct ClaudeHeroCard: View {
+    @ObservedObject private var manager = ClaudeCodeSetupManager.shared
+
+    let onRequestInstall: () -> Void
+    let onClaudeNotInstalled: () -> Void
+
+    private var isConfigured: Bool { manager.status.isConfigured }
+
+    private var statusIcon: String {
+        isConfigured ? "checkmark.circle.fill" : "circle"
+    }
+
+    private var statusColor: Color {
+        isConfigured ? Color(red: 0.41, green: 0.84, blue: 0.42) : Color.white.opacity(0.35)
+    }
+
+    private var claudeOrange: Color {
+        Color(red: 0.84, green: 0.47, blue: 0.32)
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 16) {
+            // Icon
+            IDEImageIcon(ide: .claudeCode, color: claudeOrange)
+                .frame(width: 38, height: 38)
+
+            // Details
+            VStack(alignment: .leading, spacing: 4) {
+                Text(I18n.shared.string(.claudeCode))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white)
+
+                Text(I18n.shared.string(.onboardingClaudeCardDesc))
+                    .font(.system(size: 12))
+                    .foregroundColor(Color.white.opacity(0.55))
+                    .lineLimit(2)
+            }
+
+            Spacer()
+
+            // Status + action
+            VStack(alignment: .trailing, spacing: 8) {
+                if isConfigured {
+                    HStack(spacing: 5) {
+                        Image(systemName: statusIcon)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(statusColor)
+                        Text(I18n.shared.string(.onboardingCursorConnected))
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(statusColor)
+                    }
+                } else {
+                    OnboardingButton(
+                        title: I18n.shared.string(.configure),
+                        style: .primary,
+                        size: .small,
+                        action: handleConfigure
+                    )
+                }
+            }
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.white.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                )
+        )
+    }
+
+    private func handleConfigure() {
+        if manager.isClaudeCodeInstalled {
+            onRequestInstall()
+        } else {
+            onClaudeNotInstalled()
+        }
+    }
+}
+
+/// 从 IDE 图标资源（PNG template image）加载并着色的 SwiftUI 视图。
+private struct IDEImageIcon: View {
+    let ide: IDE
+    let color: Color
+
+    var body: some View {
+        if let image = ide.iconImage {
+            Image(nsImage: image)
+                .resizable()
+                .renderingMode(.template)
+                .foregroundColor(color)
+                .aspectRatio(contentMode: .fit)
         }
     }
 }
@@ -510,57 +638,6 @@ struct GlowPreviewCard<Preview: View>: View {
                 )
         )
         .opacity(enabled ? 1.0 : 0.55)
-    }
-}
-
-// MARK: - Cursor Logo Shape
-
-/// Cursor IDE 品牌图标，从 SVG 路径转换而来。
-private struct CursorLogoShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        let s = min(rect.width, rect.height) / 1024.0
-        let ox = (rect.width - 1024 * s) / 2
-        let oy = (rect.height - 1024 * s) / 2
-        func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
-            CGPoint(x: x * s + ox, y: y * s + oy)
-        }
-
-        var path = Path()
-
-        // 外层轮廓（顺时针）
-        path.move(to: pt(901.16, 270.08))
-        path.addLine(to: pt(531.20, 57.73))
-        path.addLine(to: pt(492.80, 57.73))
-        path.addLine(to: pt(122.84, 270.08))
-        path.addLine(to: pt(106.67, 297.90))
-        path.addLine(to: pt(106.67, 726.10))
-        path.addLine(to: pt(122.84, 753.92))
-        path.addLine(to: pt(492.80, 966.27))
-        path.addLine(to: pt(531.20, 966.27))
-        path.addLine(to: pt(901.21, 753.92))
-        path.addLine(to: pt(917.33, 726.10))
-        path.addLine(to: pt(917.33, 297.90))
-        path.closeSubpath()
-
-        // 内层前面（逆时针 → 形成镂空）
-        path.move(to: pt(877.95, 315.05))
-        path.addLine(to: pt(520.79, 930.05))
-        path.addCurve(to: pt(512.00, 927.70),
-                      control1: pt(518.36, 934.19),
-                      control2: pt(512.00, 932.48))
-        path.addLine(to: pt(512.00, 525.01))
-        path.addLine(to: pt(500.65, 505.47))
-        path.addLine(to: pt(149.85, 304.13))
-        path.addCurve(to: pt(152.24, 295.43),
-                      control1: pt(145.71, 301.74),
-                      control2: pt(147.42, 295.43))
-        path.addLine(to: pt(866.56, 295.43))
-        path.addCurve(to: pt(877.95, 315.06),
-                      control1: pt(876.67, 295.43),
-                      control2: pt(877.95, 304.13))
-        path.closeSubpath()
-
-        return path
     }
 }
 

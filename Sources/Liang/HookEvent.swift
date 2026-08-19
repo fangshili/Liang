@@ -80,14 +80,14 @@ extension HookEvent {
         }
     }
 
-    /// 从 Cursor Hook 桥接脚本输出的 JSON 字典解析。
-    init?(cursorPayload: [String: Any]) {
-        guard let hook = cursorPayload["hook"] as? String else { return nil }
+    /// 从桥接脚本输出的统一 JSON 字典解析（Cursor 与 Claude Code 桥接脚本均输出该格式）。
+    init?(payload: [String: Any]) {
+        guard let hook = payload["hook"] as? String else { return nil }
 
         let dateFormatter = ISO8601DateFormatter()
         dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let timestamp: Date
-        if let timestampString = cursorPayload["timestamp"] as? String,
+        if let timestampString = payload["timestamp"] as? String,
            let parsed = dateFormatter.date(from: timestampString) {
             timestamp = parsed
         } else {
@@ -95,19 +95,19 @@ extension HookEvent {
         }
 
         self.init(
-            source: (cursorPayload["source"] as? String) ?? "cursor",
+            source: (payload["source"] as? String) ?? "cursor",
             hook: hook,
             timestamp: timestamp,
-            conversationID: cursorPayload["conversation_id"] as? String,
-            generationID: cursorPayload["generation_id"] as? String,
-            taskID: cursorPayload["tool_use_id"] as? String ?? cursorPayload["subagent_id"] as? String,
-            toolName: cursorPayload["tool_name"] as? String,
-            toolUseID: cursorPayload["tool_use_id"] as? String,
-            subagentID: cursorPayload["subagent_id"] as? String,
-            status: cursorPayload["status"] as? String,
-            failureType: cursorPayload["failure_type"] as? String,
-            durationMs: cursorPayload["duration_ms"] as? Double,
-            rawPayload: cursorPayload
+            conversationID: payload["conversation_id"] as? String,
+            generationID: payload["generation_id"] as? String,
+            taskID: payload["tool_use_id"] as? String ?? payload["subagent_id"] as? String,
+            toolName: payload["tool_name"] as? String,
+            toolUseID: payload["tool_use_id"] as? String,
+            subagentID: payload["subagent_id"] as? String,
+            status: payload["status"] as? String,
+            failureType: payload["failure_type"] as? String,
+            durationMs: payload["duration_ms"] as? Double,
+            rawPayload: payload
         )
     }
 }

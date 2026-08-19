@@ -228,15 +228,40 @@ final class CursorSetupManager: ObservableObject {
         logger.info("Setting executable permissions")
         try fileManager.setAttributes([.posixPermissions: NSNumber(value: 0o755)], ofItemAtPath: defaultScriptURL.path)
 
-        var hooks: [String: [[String: String]]] = [:]
-        for event in requiredHooks {
-            hooks[event] = [["command": defaultScriptURL.path]]
+        // H2 修复：读取现有 hooks.json 并按事件名合并，仅插入/更新 Liang 条目，
+        // 保留用户已有配置，避免整体覆盖破坏其他工具的 hooks。
+        var existingConfig: [String: Any] = [:]
+        var existingHooks: [String: [[String: Any]]] = [:]
+        if let existingData = FileManager.default.contents(atPath: hooksJSONURL.path),
+           let json = try? JSONSerialization.jsonObject(with: existingData) as? [String: Any] {
+            existingConfig = json
+            if let hooks = json["hooks"] as? [String: [[String: Any]]] {
+                existingHooks = hooks
+            }
         }
-        let config: [String: Any] = ["version": 1, "hooks": hooks]
-        let configData = try JSONSerialization.data(withJSONObject: config, options: [.prettyPrinted, .sortedKeys])
+
+        let liangCommand = defaultScriptURL.path
+        var mergedHooks = existingHooks
+        for event in requiredHooks {
+            let liangEntry: [String: Any] = ["command": liangCommand]
+            var commands = mergedHooks[event] ?? []
+            // 移除旧的 Liang 条目（按 command 指向 liang-bridge.sh 判断），避免重复。
+            commands.removeAll { entry in
+                guard let cmd = entry["command"] as? String else { return false }
+                return (cmd as NSString).standardizingPath == (liangCommand as NSString).standardizingPath
+            }
+            commands.append(liangEntry)
+            mergedHooks[event] = commands
+        }
+
+        existingConfig["hooks"] = mergedHooks
+        if existingConfig["version"] == nil {
+            existingConfig["version"] = 1
+        }
+        let configData = try JSONSerialization.data(withJSONObject: existingConfig, options: [.prettyPrinted, .sortedKeys])
 
         // 使用原子写入，避免先删除再写入导致中途崩溃/终止时 hooks.json 丢失。
-        logger.info("Writing hooks.json to \(self.hooksJSONURL.path)")
+        logger.info("Writing merged hooks.json to \(self.hooksJSONURL.path)")
         try configData.write(to: hooksJSONURL, options: .atomic)
 
         logger.info("Cursor Hooks auto-install completed")

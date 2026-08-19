@@ -18,7 +18,10 @@ let package = Package(
             ],
             path: "Sources/Liang",
             resources: [
-                .copy("Resources/hooks/liang-bridge.sh")
+                .copy("Resources/hooks/liang-bridge.sh"),
+                .copy("Resources/hooks/claude-bridge.sh"),
+                .copy("Resources/Icons/cursor-icon.png"),
+                .copy("Resources/Icons/claude-icon.png")
             ]
         )
     ]

@@ -2,18 +2,17 @@ import Foundation
 import Combine
 import os
 
-private let logger = Logger(subsystem: "com.liang", category: "CursorHookAdapter")
+private let logger = Logger(subsystem: "com.liang", category: "FileHookAdapter")
 
-/// 监听 Cursor 通过桥接脚本写入的 JSONL 事件文件。
-final class CursorHookAdapter: ObservableObject, IDEAdapter {
-    var id: IDE { .cursor }
-    static let defaultEventsPath: URL = {
-        FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".liang")
-            .appendingPathComponent("cursor-events.jsonl")
-    }()
+/// 监听 IDE 通过桥接脚本写入的 JSONL 事件文件。
+/// 通用文件监听，不特定于某个 IDE；Cursor 与 Claude Code 各持有一个实例。
+final class FileHookAdapter: ObservableObject, IDEAdapter {
+    let id: IDE
 
-    @Published private(set) var events: [HookEvent] = []
+    /// 增量事件流：每解析出一条新事件即发布一次，由 StateEngine 逐条订阅处理。
+    /// 取代此前的 `events` 数组，同时解决批量丢事件（H1）与无界增长（M1）。
+    let eventSubject = PassthroughSubject<HookEvent, Never>()
+
     @Published private(set) var lastError: Error?
     @Published private(set) var isConnected: Bool = false
 
@@ -25,14 +24,20 @@ final class CursorHookAdapter: ObservableObject, IDEAdapter {
     private(set) var isRunning = false
     private var lastReadOffset: UInt64 = 0
 
+    /// 串行队列：所有 FileHandle 读取与 lastReadOffset 访问都收敛到此，
+    /// 避免 DispatchSource handler 与健康检查并发读同一 FileHandle（M2 竞态）。
+    private let readQueue: DispatchQueue
+
     /// 启动时忽略多久以前的事件，避免把历史状态当作当前状态。
     var staleEventThreshold: TimeInterval = 30
 
     /// 文件健康检查间隔。
     var healthCheckInterval: TimeInterval = 30
 
-    init(eventsURL: URL = CursorHookAdapter.defaultEventsPath) {
+    init(id: IDE, eventsURL: URL) {
+        self.id = id
         self.eventsURL = eventsURL
+        self.readQueue = DispatchQueue(label: "com.liang.read-\(id.rawValue)", qos: .utility)
     }
 
     deinit {
@@ -43,9 +48,8 @@ final class CursorHookAdapter: ObservableObject, IDEAdapter {
     func start() {
         guard !isRunning else { return }
         isRunning = true
-        logger.info("CursorHookAdapter.start()")
+        logger.info("FileHookAdapter.start() id=\(self.id.rawValue)")
 
-        events = []
         lastReadOffset = 0
 
         let directory = eventsURL.deletingLastPathComponent()
@@ -73,12 +77,13 @@ final class CursorHookAdapter: ObservableObject, IDEAdapter {
         let newSource = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: fd,
             eventMask: .extend,
-            queue: DispatchQueue.global(qos: .utility)
+            queue: readQueue
         )
 
         newSource.setEventHandler { [weak self] in
-            self?.readAvailableLines(from: handle, filterStale: false)
-            self?.updateLastOffset(from: handle)
+            guard let self = self, let handle = self.fileHandle else { return }
+            self.readAvailableLines(from: handle, filterStale: false)
+            self.updateLastOffset(from: handle)
         }
 
         newSource.setCancelHandler {
@@ -96,7 +101,7 @@ final class CursorHookAdapter: ObservableObject, IDEAdapter {
 
     func stop() {
         guard isRunning else { return }
-        logger.info("CursorHookAdapter.stop()")
+        logger.info("FileHookAdapter.stop() id=\(self.id.rawValue)")
         isRunning = false
         healthCheckTimer?.invalidate()
         healthCheckTimer = nil
@@ -108,7 +113,7 @@ final class CursorHookAdapter: ObservableObject, IDEAdapter {
 
     /// 强制重连：用于文件被清空/轮转或读取异常时。
     func restart() {
-        logger.info("CursorHookAdapter.restart()")
+        logger.info("FileHookAdapter.restart() id=\(self.id.rawValue)")
         stop()
         start()
     }
@@ -123,24 +128,29 @@ final class CursorHookAdapter: ObservableObject, IDEAdapter {
         guard isRunning else { return }
 
         let fileExists = FileManager.default.fileExists(atPath: eventsURL.path)
-        let currentSize = (try? FileManager.default.attributesOfItem(atPath: eventsURL.path)[.size] as? UInt64) ?? 0
-
         if !fileExists {
             logger.error("Events file missing, triggering reconnect")
             restart()
             return
         }
 
-        if currentSize < self.lastReadOffset {
-            logger.error("Events file truncated (currentSize=\(currentSize), lastOffset=\(self.lastReadOffset)), triggering reconnect")
-            restart()
-            return
-        }
+        // 文件大小与偏移的比较、以及可能的追读，全部收敛到 readQueue，
+        // 避免与 DispatchSource handler 并发读同一 FileHandle（M2 竞态）。
+        readQueue.async { [weak self] in
+            guard let self = self, self.isRunning else { return }
+            let currentSize = (try? FileManager.default.attributesOfItem(atPath: self.eventsURL.path)[.size] as? UInt64) ?? 0
 
-        // 如果文件增长但 DispatchSource 没有触发（极端情况），主动追读。
-        if currentSize > lastReadOffset, let handle = fileHandle {
-            readAvailableLines(from: handle, filterStale: false)
-            updateLastOffset(from: handle)
+            if currentSize < self.lastReadOffset {
+                logger.error("Events file truncated (currentSize=\(currentSize), lastOffset=\(self.lastReadOffset)), triggering reconnect")
+                DispatchQueue.main.async { self.restart() }
+                return
+            }
+
+            // 如果文件增长但 DispatchSource 没有触发（极端情况），主动追读。
+            if currentSize > self.lastReadOffset, let handle = self.fileHandle {
+                self.readAvailableLines(from: handle, filterStale: false)
+                self.updateLastOffset(from: handle)
+            }
         }
     }
 
@@ -165,7 +175,7 @@ final class CursorHookAdapter: ObservableObject, IDEAdapter {
                   let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
                 return nil
             }
-            return HookEvent(cursorPayload: json)
+            return HookEvent(payload: json)
         }
 
         if filterStale {
@@ -178,7 +188,9 @@ final class CursorHookAdapter: ObservableObject, IDEAdapter {
 
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            self.events.append(contentsOf: newEvents)
+            for event in newEvents {
+                self.eventSubject.send(event)
+            }
             self.isConnected = true
             if !newEvents.isEmpty {
                 logger.info("Received \(newEvents.count) new events")
@@ -201,6 +213,23 @@ enum AdapterError: LocalizedError {
     }
 }
 
-extension CursorHookAdapter {
-    static let shared = CursorHookAdapter()
+extension FileHookAdapter {
+    /// 各已接入 IDE 的事件文件路径。
+    static func defaultEventsURL(for id: IDE) -> URL {
+        let filename: String
+        switch id {
+        case .cursor: filename = "cursor-events.jsonl"
+        case .claudeCode: filename = "claude-events.jsonl"
+        default: filename = "\(id.rawValue.lowercased())-events.jsonl"
+        }
+        return FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".liang")
+            .appendingPathComponent(filename)
+    }
+
+    static let cursor = FileHookAdapter(id: .cursor, eventsURL: defaultEventsURL(for: .cursor))
+    static let claudeCode = FileHookAdapter(id: .claudeCode, eventsURL: defaultEventsURL(for: .claudeCode))
+
+    /// 所有已接入的 adapter（新增 IDE 时在此登记）。
+    static let all: [FileHookAdapter] = [cursor, claudeCode]
 }

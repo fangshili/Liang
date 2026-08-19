@@ -118,15 +118,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func systemWillSleep(_ notification: Notification) {
         Self.log.info("System will sleep — pausing glow")
         // Existing controllers already listen to these notifications, but we also
-        // stop the adapter to avoid using a stale file descriptor during sleep.
-        CursorHookAdapter.shared.stop()
+        // stop the adapters to avoid using a stale file descriptor during sleep.
+        StateEngine.shared.pauseAllAdapters()
     }
 
     @MainActor
     @objc private func systemDidWake(_ notification: Notification) {
         Self.log.info("System did wake — restoring services")
-        // Reconnect the IDE adapter and ask all glow controllers to refresh.
-        CursorHookAdapter.shared.restart()
+        // Reconnect the IDE adapters and ask all glow controllers to refresh.
+        StateEngine.shared.resumeAllAdapters()
         GlowController.shared.apply()
         CursorGlowController.shared.apply()
         StatusBarController.shared.refreshMenuBarIcon()

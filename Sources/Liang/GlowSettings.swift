@@ -54,6 +54,9 @@ final class GlowSettings: ObservableObject, Codable {
     /// 是否已完成首次启动的 Cursor 配置引导。
     @Published var hasCompletedCursorSetup: Bool = false
 
+    /// 是否已完成首次启动的 Claude Code 配置引导。
+    @Published var hasCompletedClaudeSetup: Bool = false
+
     /// 是否已完成首次启动的 Onboarding 整体引导（两步流程）。
     /// 与 `hasCompletedCursorSetup` 区别：后者只关心 Cursor 这一项，前者要求用户走完整个引导流程。
     @Published var hasCompletedOnboarding: Bool = false
@@ -71,6 +74,7 @@ final class GlowSettings: ObservableObject, Codable {
         case notchExpansionEnabled, cursorGlowEnabled, cursorLabelEnabled, cursorGlowSize, cursorGlowOffsetX, cursorGlowOffsetY
         case ideEnabled
         case hasCompletedCursorSetup
+        case hasCompletedClaudeSetup
         case hasCompletedOnboarding
     }
 
@@ -145,6 +149,7 @@ final class GlowSettings: ObservableObject, Codable {
         }
 
         hasCompletedCursorSetup = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedCursorSetup) ?? false
+        hasCompletedClaudeSetup = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedClaudeSetup) ?? false
         hasCompletedOnboarding = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding) ?? false
 
         setupAutosave()
@@ -195,6 +200,7 @@ final class GlowSettings: ObservableObject, Codable {
         try container.encode(ideFlags, forKey: .ideEnabled)
 
         try container.encode(hasCompletedCursorSetup, forKey: .hasCompletedCursorSetup)
+        try container.encode(hasCompletedClaudeSetup, forKey: .hasCompletedClaudeSetup)
         try container.encode(hasCompletedOnboarding, forKey: .hasCompletedOnboarding)
     }
 
@@ -228,6 +234,7 @@ final class GlowSettings: ObservableObject, Codable {
         cursorGlowOffsetY = defaults.cursorGlowOffsetY
         ideEnabled = defaults.ideEnabled
         hasCompletedCursorSetup = defaults.hasCompletedCursorSetup
+        hasCompletedClaudeSetup = defaults.hasCompletedClaudeSetup
         hasCompletedOnboarding = defaults.hasCompletedOnboarding
     }
 
@@ -291,12 +298,15 @@ final class GlowSettings: ObservableObject, Codable {
             successMaxDuration = loaded.successMaxDuration
             waitingTimeoutEnabled = loaded.waitingTimeoutEnabled
             deduplicationWindow = loaded.deduplicationWindow
+            notchExpansionEnabled = loaded.notchExpansionEnabled
             cursorGlowEnabled = loaded.cursorGlowEnabled
+            cursorLabelEnabled = loaded.cursorLabelEnabled
             cursorGlowSize = loaded.cursorGlowSize
             cursorGlowOffsetX = loaded.cursorGlowOffsetX
             cursorGlowOffsetY = loaded.cursorGlowOffsetY
             ideEnabled = loaded.ideEnabled
             hasCompletedCursorSetup = loaded.hasCompletedCursorSetup
+            hasCompletedClaudeSetup = loaded.hasCompletedClaudeSetup
             hasCompletedOnboarding = loaded.hasCompletedOnboarding
             return true
         } catch {

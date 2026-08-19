@@ -1,9 +1,10 @@
 import AppKit
 import Combine
 
-/// 任务列表单行视图：状态点 + 标题 + 时间。
+/// 任务列表单行视图：状态点 + 来源图标 + 标题 + 时间。
 final class TaskRowView: NSView {
     private let dotLayer = CAShapeLayer()
+    private let iconView = NSImageView()
     private let titleField = NSTextField(labelWithString: "")
     private let timeField = NSTextField(labelWithString: "")
     private var cancellables = Set<AnyCancellable>()
@@ -30,6 +31,11 @@ final class TaskRowView: NSView {
         dotLayer.strokeColor = NSColor.clear.cgColor
         layer?.addSublayer(dotLayer)
 
+        // 来源图标
+        iconView.imageScaling = .scaleProportionallyUpOrDown
+        iconView.contentTintColor = NSColor(white: 0.62, alpha: 1.0)
+        addSubview(iconView)
+
         // 标题
         titleField.textColor = NSColor(white: 0.95, alpha: 1.0)
         titleField.font = NSFont.systemFont(ofSize: 13, weight: .regular)
@@ -52,7 +58,7 @@ final class TaskRowView: NSView {
         addSubview(timeField)
 
         NSLayoutConstraint.activate([
-            titleField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 48),
+            titleField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 58),
             titleField.centerYAnchor.constraint(equalTo: centerYAnchor),
             titleField.trailingAnchor.constraint(equalTo: timeField.leadingAnchor, constant: -12),
 
@@ -79,6 +85,10 @@ final class TaskRowView: NSView {
         let dotY = (bounds.height - dotSize) / 2
         dotLayer.frame = CGRect(x: 22, y: dotY, width: dotSize, height: dotSize)
         dotLayer.path = CGPath(ellipseIn: dotLayer.bounds, transform: nil)
+
+        let iconSize: CGFloat = 14
+        let iconY = (bounds.height - iconSize) / 2
+        iconView.frame = CGRect(x: 38, y: iconY, width: iconSize, height: iconSize)
     }
 
     private func update() {
@@ -91,6 +101,7 @@ final class TaskRowView: NSView {
 
         titleField.stringValue = task.title
         timeField.stringValue = Self.formatTime(task.updatedAt)
+        iconView.image = IDE.fromSource(task.source).iconImage
 
         let appearance = task.state.appearance(using: GlowSettings.shared)
         dotLayer.fillColor = (appearance?.color ?? NSColor.white).cgColor

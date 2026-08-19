@@ -15,7 +15,7 @@ final class StateEngine: ObservableObject {
     @Published private(set) var lastEventAt: Date?
     @Published private(set) var recentTasks: [TaskItem] = []
 
-    private let adapter: CursorHookAdapter
+    private let adapters: [FileHookAdapter]
     private var cancellables = Set<AnyCancellable>()
     private var timeoutTimer: Timer?
     private var successResetTimer: Timer?
@@ -41,8 +41,8 @@ final class StateEngine: ObservableObject {
     private var recentSignatures: [String: Date] = [:]
     private var settings: GlowSettings { GlowController.shared.settings }
 
-    init(adapter: CursorHookAdapter = CursorHookAdapter.shared) {
-        self.adapter = adapter
+    init(adapters: [FileHookAdapter] = FileHookAdapter.all) {
+        self.adapters = adapters
         let defaults = GlowSettings(defaults: true)
         self.processingTimeout = defaults.processingTimeout
         self.successMaxDuration = defaults.successMaxDuration
@@ -55,41 +55,42 @@ final class StateEngine: ObservableObject {
         isStarted = true
         logger.info("StateEngine.start()")
 
-        adapter.start()
         bindSettings()
-        startHeartbeat()
 
-        adapter.$events
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] events in
-                guard let self = self, let event = events.last else { return }
-                self.handle(event: event)
-            }
-            .store(in: &cancellables)
-
-        adapter.$isConnected
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isConnected in
-                guard let self = self else { return }
-                if !isConnected && self.lastEvent == nil {
-                    self.state = .disconnected
+        // 订阅所有 adapter 的事件与连接状态（共用状态机）。
+        for adapter in adapters {
+            adapter.eventSubject
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] event in
+                    self?.handle(event: event)
                 }
-            }
-            .store(in: &cancellables)
+                .store(in: &cancellables)
 
+            adapter.$isConnected
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    self?.refreshConnectivity()
+                }
+                .store(in: &cancellables)
+        }
+
+        // 初始按各 IDE 的启用状态启停 adapter。
+        applyAdapterStates()
+
+        // 监听各 IDE 的启用开关变化。
         GlowController.shared.settings.$cursorHooksEnabled
             .dropFirst()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] enabled in
-                guard let self = self else { return }
-                if enabled {
-                    self.adapter.start()
-                    self.startHeartbeat()
-                } else {
-                    self.adapter.stop()
-                    self.invalidateTimers()
-                    self.transition(to: .disconnected)
-                }
+            .sink { [weak self] _ in
+                self?.applyAdapterStates()
+            }
+            .store(in: &cancellables)
+
+        GlowController.shared.settings.$ideEnabled
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyAdapterStates()
             }
             .store(in: &cancellables)
     }
@@ -98,9 +99,51 @@ final class StateEngine: ObservableObject {
         guard isStarted else { return }
         logger.info("StateEngine.stop()")
         isStarted = false
-        adapter.stop()
+        adapters.forEach { $0.stop() }
         cancellables.removeAll()
         invalidateTimers()
+    }
+
+    /// 睡眠前暂停所有 adapter，避免持有过期的文件描述符。
+    func pauseAllAdapters() {
+        adapters.forEach { $0.stop() }
+    }
+
+    /// 唤醒后恢复所有已启用的 adapter。
+    func resumeAllAdapters() {
+        for adapter in adapters where settings.isIDEEnabled(adapter.id) {
+            adapter.restart()
+        }
+        refreshConnectivity()
+    }
+
+    /// 按各 IDE 的启用状态启停对应 adapter，并维护心跳与连接状态。
+    /// M7 修复：启动/运行时若 hooks 关闭，不启动对应 adapter；全部关闭时进入 disconnected。
+    private func applyAdapterStates() {
+        var anyRunning = false
+        for adapter in adapters {
+            if settings.isIDEEnabled(adapter.id) {
+                adapter.start()
+                anyRunning = true
+            } else {
+                adapter.stop()
+            }
+        }
+
+        if anyRunning {
+            startHeartbeat()
+        } else {
+            invalidateTimers()
+            transition(to: .disconnected)
+        }
+    }
+
+    /// 所有 adapter 都未连接且尚无事件时，回到 disconnected。
+    private func refreshConnectivity() {
+        let anyConnected = adapters.contains { $0.isConnected }
+        if !anyConnected && lastEvent == nil {
+            state = .disconnected
+        }
     }
 
     private func bindSettings() {
@@ -156,23 +199,29 @@ final class StateEngine: ObservableObject {
             return
         }
 
-        transition(to: newState)
+        transition(to: newState, conversationID: event.conversationID)
     }
 
-    private func transition(to newState: LiangState) {
+    private func transition(to newState: LiangState, conversationID: String? = nil) {
         logger.info("state transition: \(String(describing: self.state)) -> \(String(describing: newState))")
         let previousState = state
         state = newState
 
         // 兜底：当全局状态从 processing/waiting/success 离开（任务结束/超时）时，
-        // 同步更新所有对应任务状态，避免 stop 事件 conversationID 缺失或同时存在多个任务时列表卡在处理中。
+        // 同步更新对应任务状态，避免 stop 事件 conversationID 缺失或同时存在多个任务时列表卡在处理中。
         let shouldPropagate = previousState == .processing || previousState == .waiting || previousState == .success
         if shouldPropagate {
             switch newState {
             case .success, .error, .idle:
                 let now = Date()
-                for index in recentTasks.indices where recentTasks[index].state == previousState {
+                for index in recentTasks.indices {
                     let task = recentTasks[index]
+                    guard task.state == previousState else { continue }
+                    // 并行会话隔离：事件携带会话 ID 时，仅更新同会话任务，
+                    // 避免把仍在运行的其他会话任务误标为终态（M3）。
+                    if let conversationID, !conversationID.isEmpty {
+                        guard task.conversationID == conversationID else { continue }
+                    }
                     recentTasks[index].state = newState
                     recentTasks[index].updatedAt = now
                     // 如果原任务标题来自 tool/progress hook，全局收尾时同步为终态标题。
@@ -289,7 +338,7 @@ final class StateEngine: ObservableObject {
     }
 
     private func isDuplicate(_ event: HookEvent) -> Bool {
-        let signature = "\(event.hook)|\(event.taskID ?? "")|\(event.status ?? "")"
+        let signature = "\(event.hook)|\(event.conversationID ?? "")|\(event.generationID ?? "")|\(event.taskID ?? "")|\(event.status ?? "")"
         let now = Date()
 
         // 清理过期签名。
@@ -332,6 +381,12 @@ final class StateEngine: ObservableObject {
     /// 用新事件更新内存任务列表：按 conversationID 去重，保留最新状态与标题。
     /// sessionEnd 如果没有命中已有任务，则不单独创建新记录，避免“Start Session + End Session”同时出现。
     private func updateRecentTasks(with event: HookEvent) {
+        // subagent 是主对话的一部分，不单独成卡片（合并进主任务），
+        // 避免 subagent 事件覆盖主任务的标题与状态。
+        if event.hook == "subagentStart" || event.hook == "subagentStop" {
+            return
+        }
+
         let primaryKey = event.conversationID ?? event.id.uuidString
         var task = TaskItem(event: event)
         let matchedIndex = indexOfTask(matching: event, primaryKey: primaryKey)

@@ -332,6 +332,19 @@ enum LocalizedKey: String {
     case welcomeBody = "Liang needs Cursor Hooks to get the working status and show glow hints in the notch."
     case setupCompleteTitle = "Setup Complete"
     case setupCompleteBody = "Cursor Hooks is configured. You can change it later in Settings."
+
+    // MARK: - Settings - IDE / Claude Code
+    case enableClaudeCodeHooks = "Enable Claude Code Hooks"
+    case claudeCodeHooksStatus = "Claude Code Hooks Status"
+    case eventsFileClaude = "Events file: ~/.liang/claude-events.jsonl"
+    case claudeInstallDescription = "Automatically write ~/.claude/settings.json and the bridge script. Liang will not read or upload any code, prompts, or file contents."
+    case claudeInstallConfirmMessage = "This will write to ~/.claude/settings.json and ~/.claude/hooks/claude-bridge.sh, preserving your other Claude Code settings. Continue?"
+    case claudeSetupMissingSettingsJson = "~/.claude/settings.json not detected"
+    case claudeSetupInvalidSettingsJson = "~/.claude/settings.json format is invalid"
+    case onboardingClaudeCardDesc = "Claude Code hooks cover session, tool, and agent states, so Liang reacts the moment your terminal agent is working."
+    case onboardingClaudeNotInstalledTitle = "Claude Code Not Installed"
+    case onboardingClaudeNotInstalledMessage = "Liang requires the Claude Code CLI to receive agent events. Please install Claude Code first, or continue if it is already installed but not detected."
+    case onboardingClaudeNotInstalledDownload = "Install Claude Code"
 }
 
 // MARK: - English Translations
@@ -351,7 +364,7 @@ private enum EnglishTranslations {
         .onboardingCursorCardTitle: "Cursor",
         .onboardingCursorCardDesc: "Cursor hooks cover every meaningful state, so Liang reacts the moment your agent is working.",
         .onboardingOtherAgentsTitle: "Other agents",
-        .onboardingOtherAgentsHint: "Claude Code · Codex CLI · CodeBuddy · Trae",
+        .onboardingOtherAgentsHint: "Codex CLI · CodeBuddy · Trae",
         .onboardingOtherComingSoon: "Coming soon...",
         .onboardingThanksTitle: "👋 Thanks for installing Liang!",
         .onboardingThanksBody: "You can change your preferences anytime from the menu bar.\\nMay a tiny glow keep you company while coding alone ❤️",
@@ -598,7 +611,7 @@ private enum ChineseTranslations {
         .onboardingCursorCardTitle: "Cursor",
         .onboardingCursorCardDesc: "Cursor 的 Hook 覆盖了所有关键状态，Liang 会在 Agent 一启动工作时立刻反应。",
         .onboardingOtherAgentsTitle: "其他 Agent",
-        .onboardingOtherAgentsHint: "Claude Code · Codex CLI · CodeBuddy · Trae",
+        .onboardingOtherAgentsHint: "Codex CLI · CodeBuddy · Trae",
         .onboardingOtherComingSoon: "敬请期待…",
         .onboardingThanksTitle: "👋 感谢安装 Liang！",
         .onboardingThanksBody: "你可通过菜单中的“设置”更改相关设置项。\\n愿一个小小的光晕陪伴你独自 coding 的时光 ❤️",
@@ -628,6 +641,17 @@ private enum ChineseTranslations {
         .cursorSetupStatusMissing: "配置不完整（缺少文件）",
         .cursorSetupStatusPartial: "配置不完整（Hook 未全部注册）",
         .cursorSetupStatusNotConfigured: "未配置",
-        .cursorSetupStatusChecking: "检测中"
+        .cursorSetupStatusChecking: "检测中",
+        .enableClaudeCodeHooks: "启用 Claude Code Hooks",
+        .claudeCodeHooksStatus: "Claude Code Hooks 状态",
+        .eventsFileClaude: "事件文件：~/.liang/claude-events.jsonl",
+        .claudeInstallDescription: "由 Liang 自动写入 ~/.claude/settings.json 和桥接脚本。不会读取或上传任何代码、prompt、文件内容。",
+        .claudeInstallConfirmMessage: "将写入 ~/.claude/settings.json 和 ~/.claude/hooks/claude-bridge.sh，并保留你的其他 Claude Code 配置。是否继续？",
+        .claudeSetupMissingSettingsJson: "未检测到 ~/.claude/settings.json",
+        .claudeSetupInvalidSettingsJson: "~/.claude/settings.json 内容格式不正确",
+        .onboardingClaudeCardDesc: "Claude Code 的 Hook 覆盖会话、工具与子代理状态，终端里的 Agent 一开工 Liang 就立刻反应。",
+        .onboardingClaudeNotInstalledTitle: "未检测到 Claude Code",
+        .onboardingClaudeNotInstalledMessage: "Liang 需要 Claude Code CLI 才能接收 Agent 事件。请先安装 Claude Code；若已安装但未被检测到，仍可继续。",
+        .onboardingClaudeNotInstalledDownload: "安装 Claude Code"
     ]
 }
