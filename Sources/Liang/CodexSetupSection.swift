@@ -61,14 +61,12 @@ struct CodexSetupSection: View {
                         return Alert(
                             title: Text(I18n.shared.string(.onboardingCodexNotInstalledTitle)),
                             message: Text(I18n.shared.string(.onboardingCodexNotInstalledMessage)),
-                            primaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledContinue))) {
-                                manager.installAutomatically()
-                            },
-                            secondaryButton: .default(Text(I18n.shared.string(.onboardingCodexNotInstalledDownload))) {
+                            primaryButton: .default(Text(I18n.shared.string(.onboardingCodexNotInstalledDownload))) {
                                 if let url = URL(string: "https://github.com/openai/codex") {
                                     NSWorkspace.shared.open(url)
                                 }
-                            }
+                            },
+                            secondaryButton: .cancel(Text(I18n.shared.string(.cancel)))
                         )
                     }
                 }
@@ -124,6 +122,7 @@ struct CodexSetupSection: View {
     }
 
     private func handleConfigure() {
+        manager.refresh()
         if manager.isCodexInstalled {
             activeAlert = .installConfirmation
         } else {

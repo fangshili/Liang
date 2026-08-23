@@ -43,8 +43,11 @@ final class CursorSetupManager: ObservableObject {
 
     private let fileManager = FileManager.default
 
+    /// 本机是否已安装 Cursor 应用。由 `refresh()` 同步检测并更新，UI 可观察。
+    @Published private(set) var isCursorInstalled: Bool = false
+
     /// 检测 Cursor 应用是否已安装。优先检查常见安装路径，再尝试通过 bundle ID 定位。
-    var isCursorInstalled: Bool {
+    private func detectCursorInstalled() -> Bool {
         let home = fileManager.homeDirectoryForCurrentUser.path
         let candidates = [
             "/Applications/Cursor.app",
@@ -94,8 +97,9 @@ final class CursorSetupManager: ObservableObject {
 
     private init() {}
 
-    /// 刷新静态配置检测结果。
+    /// 刷新安装状态与静态配置检测结果。
     func refresh() {
+        isCursorInstalled = detectCursorInstalled()
         Task {
             let newStatus = await performStaticCheck()
             self.status = newStatus
@@ -106,6 +110,7 @@ final class CursorSetupManager: ObservableObject {
     /// 调用前应在 UI 中向用户说明将要修改的文件。
     func installAutomatically() {
         guard !isInstalling else { return }
+        guard isCursorInstalled else { return }
         isInstalling = true
         lastInstallError = nil
 

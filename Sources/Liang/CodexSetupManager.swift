@@ -44,8 +44,11 @@ final class CodexSetupManager: ObservableObject {
 
     private let fileManager = FileManager.default
 
+    /// 本机是否已安装 Codex（CLI 或 ChatGPT 桌面版）。由 `refresh()` 同步检测并更新，UI 可观察。
+    @Published private(set) var isCodexInstalled: Bool = false
+
     /// 检测 Codex 是否已安装：`codex` CLI 二进制，或 ChatGPT.app（Codex 桌面版，内置 Codex 引擎）。
-    var isCodexInstalled: Bool {
+    private func detectCodexInstalled() -> Bool {
         let home = fileManager.homeDirectoryForCurrentUser.path
         var candidates = [
             "/opt/homebrew/bin/codex",
@@ -98,8 +101,9 @@ final class CodexSetupManager: ObservableObject {
 
     private init() {}
 
-    /// 刷新静态配置检测结果。
+    /// 刷新安装状态与静态配置检测结果。
     func refresh() {
+        isCodexInstalled = detectCodexInstalled()
         Task {
             let newStatus = await performStaticCheck()
             self.status = newStatus
@@ -109,6 +113,7 @@ final class CodexSetupManager: ObservableObject {
     /// 自动安装：将应用内桥接脚本复制到 ~/.codex/hooks/ 并合并写入 hooks.json。
     func installAutomatically() {
         guard !isInstalling else { return }
+        guard isCodexInstalled else { return }
         isInstalling = true
         lastInstallError = nil
 

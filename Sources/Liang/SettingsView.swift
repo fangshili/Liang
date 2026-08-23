@@ -318,6 +318,10 @@ private struct CodingAgentPage: View {
     @EnvironmentObject var i18n: I18n
     @State private var selectedIDE: IDE = .cursor
 
+    @ObservedObject private var cursorManager = CursorSetupManager.shared
+    @ObservedObject private var claudeManager = ClaudeCodeSetupManager.shared
+    @ObservedObject private var codexManager = CodexSetupManager.shared
+
     var body: some View {
         let _ = i18n.currentLanguage
         HStack(spacing: 0) {
@@ -325,6 +329,9 @@ private struct CodingAgentPage: View {
             Divider()
             detailPanel
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+        .onAppear {
+            refreshInstallationState()
         }
     }
 
@@ -343,17 +350,23 @@ private struct CodingAgentPage: View {
     private func ideRow(_ ide: IDE) -> some View {
         let isSelected = selectedIDE == ide
         let isSupported = ide == .cursor || ide == .claudeCode || ide == .codex
+        let installed = isIDEInstalled(ide)
 
         return HStack(spacing: 12) {
             Text(ide.displayName)
                 .font(.system(size: 13))
                 .lineLimit(1)
                 .truncationMode(.tail)
+            if isSupported && !installed {
+                Text(I18n.shared.string(.notInstalledHint))
+                    .font(.caption2)
+                    .foregroundColor(.orange)
+            }
             Spacer()
             Toggle("", isOn: enabledBinding(for: ide))
                 .toggleStyle(.switch)
                 .controlSize(.small)
-                .disabled(!isSupported)
+                .disabled(!isSupported || !installed)
                 .help(helpText(for: ide))
         }
         .padding(.horizontal, 10)
@@ -401,7 +414,15 @@ private struct CodingAgentPage: View {
     private func enabledBinding(for ide: IDE) -> Binding<Bool> {
         Binding(
             get: { settings.isIDEEnabled(ide) },
-            set: { settings.setIDEEnabled(ide, enabled: $0) }
+            set: { newValue in
+                // 点击开关时实时检测安装状态；未安装则不允许开启。
+                refreshInstallationState()
+                if newValue && !isIDEInstalled(ide) {
+                    settings.setIDEEnabled(ide, enabled: false)
+                    return
+                }
+                settings.setIDEEnabled(ide, enabled: newValue)
+            }
         )
     }
 
@@ -413,6 +434,27 @@ private struct CodingAgentPage: View {
         default: return I18n.shared.string(.ideSupportComingSoon, ide.displayName)
         }
     }
+
+    /// 检测各 Coding Agent 是否已安装，未安装的自动禁用开关。
+    private func refreshInstallationState() {
+        cursorManager.refresh()
+        claudeManager.refresh()
+        codexManager.refresh()
+
+        if !cursorManager.isCursorInstalled { settings.setIDEEnabled(.cursor, enabled: false) }
+        if !claudeManager.isClaudeCodeInstalled { settings.setIDEEnabled(.claudeCode, enabled: false) }
+        if !codexManager.isCodexInstalled { settings.setIDEEnabled(.codex, enabled: false) }
+    }
+
+    /// 某个 IDE 是否已安装（供开关禁用与「未安装」提示使用）。
+    private func isIDEInstalled(_ ide: IDE) -> Bool {
+        switch ide {
+        case .cursor: return cursorManager.isCursorInstalled
+        case .claudeCode: return claudeManager.isClaudeCodeInstalled
+        case .codex: return codexManager.isCodexInstalled
+        default: return false
+        }
+    }
 }
 
 private struct CursorPage: View {
@@ -420,6 +462,20 @@ private struct CursorPage: View {
     @EnvironmentObject var i18n: I18n
     @ObservedObject private var engine = StateEngine.shared
     @ObservedObject private var adapter = FileHookAdapter.cursor
+    @ObservedObject private var setupManager = CursorSetupManager.shared
+
+    private var cursorEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { settings.cursorHooksEnabled },
+            set: { newValue in
+                if newValue && !setupManager.isCursorInstalled {
+                    settings.cursorHooksEnabled = false
+                    return
+                }
+                settings.cursorHooksEnabled = newValue
+            }
+        )
+    }
 
     private var statusText: String {
         if !adapter.isConnected {
@@ -434,8 +490,9 @@ private struct CursorPage: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text(I18n.shared.string(.featureSwitches))
                     .font(.system(size: 13, weight: .medium))
-                Toggle(I18n.shared.string(.enableCursorHooks), isOn: $settings.cursorHooksEnabled)
+                Toggle(I18n.shared.string(.enableCursorHooks), isOn: cursorEnabledBinding)
                     .help(I18n.shared.string(.enableCursorHooks))
+                    .disabled(!setupManager.isCursorInstalled)
             }
 
             VStack(alignment: .leading, spacing: 10) {
@@ -487,6 +544,7 @@ private struct ClaudeCodePage: View {
     @EnvironmentObject var i18n: I18n
     @ObservedObject private var engine = StateEngine.shared
     @ObservedObject private var adapter = FileHookAdapter.claudeCode
+    @ObservedObject private var setupManager = ClaudeCodeSetupManager.shared
 
     private var statusText: String {
         if !adapter.isConnected {
@@ -503,6 +561,7 @@ private struct ClaudeCodePage: View {
                     .font(.system(size: 13, weight: .medium))
                 Toggle(I18n.shared.string(.enableClaudeCodeHooks), isOn: claudeEnabledBinding)
                     .help(I18n.shared.string(.enableClaudeCodeHooks))
+                    .disabled(!setupManager.isClaudeCodeInstalled)
             }
 
             VStack(alignment: .leading, spacing: 10) {
@@ -562,7 +621,13 @@ private struct ClaudeCodePage: View {
     private var claudeEnabledBinding: Binding<Bool> {
         Binding(
             get: { settings.isIDEEnabled(.claudeCode) },
-            set: { settings.setIDEEnabled(.claudeCode, enabled: $0) }
+            set: { newValue in
+                if newValue && !setupManager.isClaudeCodeInstalled {
+                    settings.setIDEEnabled(.claudeCode, enabled: false)
+                    return
+                }
+                settings.setIDEEnabled(.claudeCode, enabled: newValue)
+            }
         )
     }
 }
@@ -572,6 +637,7 @@ private struct CodexPage: View {
     @EnvironmentObject var i18n: I18n
     @ObservedObject private var engine = StateEngine.shared
     @ObservedObject private var adapter = FileHookAdapter.codex
+    @ObservedObject private var setupManager = CodexSetupManager.shared
 
     private var statusText: String {
         if !adapter.isConnected {
@@ -588,6 +654,7 @@ private struct CodexPage: View {
                     .font(.system(size: 13, weight: .medium))
                 Toggle(I18n.shared.string(.enableCodexHooks), isOn: codexEnabledBinding)
                     .help(I18n.shared.string(.enableCodexHooks))
+                    .disabled(!setupManager.isCodexInstalled)
             }
 
             VStack(alignment: .leading, spacing: 10) {
@@ -658,7 +725,13 @@ private struct CodexPage: View {
     private var codexEnabledBinding: Binding<Bool> {
         Binding(
             get: { settings.isIDEEnabled(.codex) },
-            set: { settings.setIDEEnabled(.codex, enabled: $0) }
+            set: { newValue in
+                if newValue && !setupManager.isCodexInstalled {
+                    settings.setIDEEnabled(.codex, enabled: false)
+                    return
+                }
+                settings.setIDEEnabled(.codex, enabled: newValue)
+            }
         )
     }
 }
@@ -953,7 +1026,7 @@ private struct AboutPage: View {
                 Text(I18n.shared.string(.appName))
                     .font(.system(size: 13, weight: .medium))
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(I18n.shared.string(.versionFormat, "0.1.6"))
+                    Text(I18n.shared.string(.versionFormat, "0.1.7"))
                         .font(.system(size: 13))
                     Text(I18n.shared.string(.aboutTitle))
                         .font(.caption)

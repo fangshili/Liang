@@ -313,7 +313,7 @@ enum LocalizedKey: String {
     case onboardingPreviewActive = "Onboarding · Preview Active"
     case onboardingCursorConnected = "Onboarding · Cursor Connected"
     case onboardingCursorNotInstalledTitle = "Cursor Not Installed"
-    case onboardingCursorNotInstalledMessage = "Liang requires Cursor to receive agent events. Please install Cursor first, or continue if Cursor is already installed but not detected."
+    case onboardingCursorNotInstalledMessage = "Liang requires Cursor to receive agent events. Please install Cursor first, then configure it here."
     case onboardingCursorNotInstalledContinue = "Continue Anyway"
     case onboardingCursorNotInstalledDownload = "Download Cursor"
     case glowTabGeneral = "Glow Tab General"
@@ -344,7 +344,7 @@ enum LocalizedKey: String {
     case onboardingClaudeCardDesc = "Claude Code hooks cover session, tool, and agent states. Supports CLI, VS Code, JetBrains, and Desktop local sessions."
     case claudeSupportedClients = "Supported clients: Terminal CLI, VS Code, JetBrains, and Desktop local sessions. Cloud sessions are not supported."
     case onboardingClaudeNotInstalledTitle = "Claude Code Not Installed"
-    case onboardingClaudeNotInstalledMessage = "Liang requires the Claude Code CLI to receive agent events. Please install Claude Code first, or continue if it is already installed but not detected."
+    case onboardingClaudeNotInstalledMessage = "Liang requires the Claude Code CLI to receive agent events. Please install Claude Code first, then configure it here."
     case onboardingClaudeNotInstalledDownload = "Install Claude Code"
 
     // MARK: - Settings - IDE / Codex
@@ -359,8 +359,9 @@ enum LocalizedKey: String {
     case codexSupportedClients = "Supported clients: Codex CLI and the ChatGPT desktop app (Codex mode). Cloud sessions are not supported."
     case onboardingCodexCardDesc = "Codex hooks cover session, tool, and subagent states. Supports Codex CLI and the ChatGPT desktop app. Tasks always end green."
     case onboardingCodexNotInstalledTitle = "Codex Not Installed"
-    case onboardingCodexNotInstalledMessage = "Liang requires the Codex CLI to receive agent events. Please install Codex first, or continue if it is already installed but not detected."
+    case onboardingCodexNotInstalledMessage = "Liang requires the Codex CLI to receive agent events. Please install Codex first, then configure it here."
     case onboardingCodexNotInstalledDownload = "Install Codex"
+    case notInstalledHint = "Not Installed"
 }
 
 // MARK: - English Translations
@@ -394,7 +395,7 @@ private enum EnglishTranslations {
         .onboardingPreviewActive: "Previewing...",
         .onboardingCursorConnected: "Bridge Installed",
         .onboardingCursorNotInstalledTitle: "Cursor Not Installed",
-        .onboardingCursorNotInstalledMessage: "Liang requires Cursor to receive agent events. Please install Cursor first, or continue if Cursor is already installed but not detected.",
+        .onboardingCursorNotInstalledMessage: "Liang requires Cursor to receive agent events. Please install Cursor first, then configure it here.",
         .onboardingCursorNotInstalledContinue: "Continue Anyway",
         .onboardingCursorNotInstalledDownload: "Download Cursor",
         .glowTabGeneral: "General",
@@ -646,7 +647,7 @@ private enum ChineseTranslations {
         .onboardingPreviewActive: "效果展示中...",
         .onboardingCursorConnected: "已完成桥接",
         .onboardingCursorNotInstalledTitle: "未检测到 Cursor",
-        .onboardingCursorNotInstalledMessage: "Liang 需要 Cursor 才能接收 Agent 事件。请先安装 Cursor；若已安装但未被检测到，仍可继续。",
+        .onboardingCursorNotInstalledMessage: "Liang 需要 Cursor 才能接收 Agent 事件。请先安装 Cursor，然后再回来配置。",
         .onboardingCursorNotInstalledContinue: "仍要继续",
         .onboardingCursorNotInstalledDownload: "下载 Cursor",
         .glowTabGeneral: "通用",
@@ -668,7 +669,7 @@ private enum ChineseTranslations {
         .onboardingClaudeCardDesc: "Claude Code 的 Hook 覆盖会话、工具与代理状态。支持 CLI、VS Code、JetBrains 与 Desktop 本地会话。",
         .claudeSupportedClients: "支持的客户端：终端 CLI、VS Code、JetBrains、Desktop 本地会话。云端会话不支持。",
         .onboardingClaudeNotInstalledTitle: "未检测到 Claude Code",
-        .onboardingClaudeNotInstalledMessage: "Liang 需要 Claude Code CLI 才能接收 Agent 事件。请先安装 Claude Code；若已安装但未被检测到，仍可继续。",
+        .onboardingClaudeNotInstalledMessage: "Liang 需要 Claude Code CLI 才能接收 Agent 事件。请先安装 Claude Code，然后再回来配置。",
         .onboardingClaudeNotInstalledDownload: "安装 Claude Code",
         .enableCodexHooks: "启用 Codex Hooks",
         .codexHooksStatus: "Codex Hooks 状态",
@@ -681,7 +682,8 @@ private enum ChineseTranslations {
         .codexSupportedClients: "支持的客户端：Codex CLI 与 ChatGPT 桌面版（Codex 模式）。云端会话不支持。",
         .onboardingCodexCardDesc: "Codex 的 Hook 覆盖会话、工具与子代理状态。支持 Codex CLI 与 ChatGPT 桌面版。任务结束恒为绿色。",
         .onboardingCodexNotInstalledTitle: "未检测到 Codex",
-        .onboardingCodexNotInstalledMessage: "Liang 需要 Codex CLI 才能接收 Agent 事件。请先安装 Codex；若已安装但未被检测到，仍可继续。",
-        .onboardingCodexNotInstalledDownload: "安装 Codex"
+        .onboardingCodexNotInstalledMessage: "Liang 需要 Codex CLI 才能接收 Agent 事件。请先安装 Codex，然后再回来配置。",
+        .onboardingCodexNotInstalledDownload: "安装 Codex",
+        .notInstalledHint: "未安装"
     ]
 }

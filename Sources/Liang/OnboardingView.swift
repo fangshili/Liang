@@ -36,6 +36,8 @@ enum GlowPreviewState: Equatable {
 struct OnboardingRootView: View {
     @EnvironmentObject var settings: GlowSettings
     @ObservedObject private var cursorSetup = CursorSetupManager.shared
+    @ObservedObject private var claudeSetup = ClaudeCodeSetupManager.shared
+    @ObservedObject private var codexSetup = CodexSetupManager.shared
     @ObservedObject private var coordinator = OnboardingFlowCoordinator.shared
 
     var body: some View {
@@ -78,6 +80,8 @@ struct OnboardingRootView: View {
     private func handleInitialEntry() {
         if coordinator.currentStep == 2 { return }
         cursorSetup.refresh()
+        claudeSetup.refresh()
+        codexSetup.refresh()
     }
 }
 
@@ -170,12 +174,12 @@ struct OnboardingStep1View: View {
                 return Alert(
                     title: Text(I18n.shared.string(.onboardingCursorNotInstalledTitle)),
                     message: Text(I18n.shared.string(.onboardingCursorNotInstalledMessage)),
-                    primaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledContinue))),
-                    secondaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledDownload))) {
+                    primaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledDownload))) {
                         if let url = URL(string: "https://cursor.com") {
                             NSWorkspace.shared.open(url)
                         }
-                    }
+                    },
+                    secondaryButton: .cancel(Text(I18n.shared.string(.cancel)))
                 )
             case .claudeInstallConfirmation:
                 return Alert(
@@ -190,12 +194,12 @@ struct OnboardingStep1View: View {
                 return Alert(
                     title: Text(I18n.shared.string(.onboardingClaudeNotInstalledTitle)),
                     message: Text(I18n.shared.string(.onboardingClaudeNotInstalledMessage)),
-                    primaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledContinue))),
-                    secondaryButton: .default(Text(I18n.shared.string(.onboardingClaudeNotInstalledDownload))) {
+                    primaryButton: .default(Text(I18n.shared.string(.onboardingClaudeNotInstalledDownload))) {
                         if let url = URL(string: "https://code.claude.com/docs/en/setup") {
                             NSWorkspace.shared.open(url)
                         }
-                    }
+                    },
+                    secondaryButton: .cancel(Text(I18n.shared.string(.cancel)))
                 )
             case .codexInstallConfirmation:
                 return Alert(
@@ -210,12 +214,12 @@ struct OnboardingStep1View: View {
                 return Alert(
                     title: Text(I18n.shared.string(.onboardingCodexNotInstalledTitle)),
                     message: Text(I18n.shared.string(.onboardingCodexNotInstalledMessage)),
-                    primaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledContinue))),
-                    secondaryButton: .default(Text(I18n.shared.string(.onboardingCodexNotInstalledDownload))) {
+                    primaryButton: .default(Text(I18n.shared.string(.onboardingCodexNotInstalledDownload))) {
                         if let url = URL(string: "https://github.com/openai/codex") {
                             NSWorkspace.shared.open(url)
                         }
-                    }
+                    },
+                    secondaryButton: .cancel(Text(I18n.shared.string(.cancel)))
                 )
             }
         }

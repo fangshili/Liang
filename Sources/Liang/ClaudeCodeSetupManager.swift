@@ -44,10 +44,13 @@ final class ClaudeCodeSetupManager: ObservableObject {
 
     private let fileManager = FileManager.default
 
+    /// 本机是否已安装 Claude Code CLI。由 `refresh()` 同步检测并更新，UI 可观察。
+    @Published private(set) var isClaudeCodeInstalled: Bool = false
+
     /// 检测 Claude Code CLI 是否已安装：只认可执行的 `claude` 二进制。
     /// 注意：不能检查 `~/.claude` 目录——Claude Desktop 桌面应用也会创建该目录，
     /// 会导致误判为已安装（而 Desktop 并不执行 hooks）。
-    var isClaudeCodeInstalled: Bool {
+    private func detectClaudeCodeInstalled() -> Bool {
         let home = fileManager.homeDirectoryForCurrentUser.path
         var candidates = [
             "/opt/homebrew/bin/claude",
@@ -93,8 +96,9 @@ final class ClaudeCodeSetupManager: ObservableObject {
 
     private init() {}
 
-    /// 刷新静态配置检测结果。
+    /// 刷新安装状态与静态配置检测结果。
     func refresh() {
+        isClaudeCodeInstalled = detectClaudeCodeInstalled()
         Task {
             let newStatus = await performStaticCheck()
             self.status = newStatus
@@ -104,6 +108,7 @@ final class ClaudeCodeSetupManager: ObservableObject {
     /// 自动安装：将应用内桥接脚本复制到 ~/.claude/hooks/ 并合并写入 settings.json。
     func installAutomatically() {
         guard !isInstalling else { return }
+        guard isClaudeCodeInstalled else { return }
         isInstalling = true
         lastInstallError = nil
 

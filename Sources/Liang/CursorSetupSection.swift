@@ -61,14 +61,12 @@ struct CursorSetupSection: View {
                         return Alert(
                             title: Text(I18n.shared.string(.onboardingCursorNotInstalledTitle)),
                             message: Text(I18n.shared.string(.onboardingCursorNotInstalledMessage)),
-                            primaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledContinue))) {
-                                manager.installAutomatically()
-                            },
-                            secondaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledDownload))) {
+                            primaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledDownload))) {
                                 if let url = URL(string: "https://cursor.com") {
                                     NSWorkspace.shared.open(url)
                                 }
-                            }
+                            },
+                            secondaryButton: .cancel(Text(I18n.shared.string(.cancel)))
                         )
                     }
                 }
@@ -124,6 +122,7 @@ struct CursorSetupSection: View {
     }
 
     private func handleConfigure() {
+        manager.refresh()
         if manager.isCursorInstalled {
             activeAlert = .installConfirmation
         } else {

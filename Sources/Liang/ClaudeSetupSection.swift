@@ -61,14 +61,12 @@ struct ClaudeSetupSection: View {
                         return Alert(
                             title: Text(I18n.shared.string(.onboardingClaudeNotInstalledTitle)),
                             message: Text(I18n.shared.string(.onboardingClaudeNotInstalledMessage)),
-                            primaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledContinue))) {
-                                manager.installAutomatically()
-                            },
-                            secondaryButton: .default(Text(I18n.shared.string(.onboardingClaudeNotInstalledDownload))) {
+                            primaryButton: .default(Text(I18n.shared.string(.onboardingClaudeNotInstalledDownload))) {
                                 if let url = URL(string: "https://code.claude.com/docs/en/setup") {
                                     NSWorkspace.shared.open(url)
                                 }
-                            }
+                            },
+                            secondaryButton: .cancel(Text(I18n.shared.string(.cancel)))
                         )
                     }
                 }
@@ -124,6 +122,7 @@ struct ClaudeSetupSection: View {
     }
 
     private func handleConfigure() {
+        manager.refresh()
         if manager.isClaudeCodeInstalled {
             activeAlert = .installConfirmation
         } else {
