@@ -341,10 +341,26 @@ enum LocalizedKey: String {
     case claudeInstallConfirmMessage = "This will write to ~/.claude/settings.json and ~/.claude/hooks/claude-bridge.sh, preserving your other Claude Code settings. Continue?"
     case claudeSetupMissingSettingsJson = "~/.claude/settings.json not detected"
     case claudeSetupInvalidSettingsJson = "~/.claude/settings.json format is invalid"
-    case onboardingClaudeCardDesc = "Claude Code hooks cover session, tool, and agent states, so Liang reacts the moment your terminal agent is working."
+    case onboardingClaudeCardDesc = "Claude Code hooks cover session, tool, and agent states. Supports CLI, VS Code, JetBrains, and Desktop local sessions."
+    case claudeSupportedClients = "Supported clients: Terminal CLI, VS Code, JetBrains, and Desktop local sessions. Cloud sessions are not supported."
     case onboardingClaudeNotInstalledTitle = "Claude Code Not Installed"
     case onboardingClaudeNotInstalledMessage = "Liang requires the Claude Code CLI to receive agent events. Please install Claude Code first, or continue if it is already installed but not detected."
     case onboardingClaudeNotInstalledDownload = "Install Claude Code"
+
+    // MARK: - Settings - IDE / Codex
+    case enableCodexHooks = "Enable Codex Hooks"
+    case codexHooksStatus = "Codex Hooks Status"
+    case eventsFileCodex = "Events file: ~/.liang/codex-events.jsonl"
+    case codexInstallDescription = "Automatically write ~/.codex/hooks.json and the bridge script. Liang will not read or upload any code, prompts, or file contents."
+    case codexInstallConfirmMessage = "This will write to ~/.codex/hooks.json and ~/.codex/hooks/codex-bridge.sh, preserving your other Codex settings. Continue?"
+    case codexSetupMissingHooksJson = "~/.codex/hooks.json not detected"
+    case codexSetupInvalidHooksJson = "~/.codex/hooks.json format is invalid"
+    case codexLimitNote = "Codex cannot distinguish task success from failure, so finished tasks always show as success."
+    case codexSupportedClients = "Supported clients: Codex CLI and the ChatGPT desktop app (Codex mode). Cloud sessions are not supported."
+    case onboardingCodexCardDesc = "Codex hooks cover session, tool, and subagent states. Supports Codex CLI and the ChatGPT desktop app. Tasks always end green."
+    case onboardingCodexNotInstalledTitle = "Codex Not Installed"
+    case onboardingCodexNotInstalledMessage = "Liang requires the Codex CLI to receive agent events. Please install Codex first, or continue if it is already installed but not detected."
+    case onboardingCodexNotInstalledDownload = "Install Codex"
 }
 
 // MARK: - English Translations
@@ -364,7 +380,7 @@ private enum EnglishTranslations {
         .onboardingCursorCardTitle: "Cursor",
         .onboardingCursorCardDesc: "Cursor hooks cover every meaningful state, so Liang reacts the moment your agent is working.",
         .onboardingOtherAgentsTitle: "Other agents",
-        .onboardingOtherAgentsHint: "Codex CLI · CodeBuddy · Trae",
+        .onboardingOtherAgentsHint: "CodeBuddy · Trae",
         .onboardingOtherComingSoon: "Coming soon...",
         .onboardingThanksTitle: "👋 Thanks for installing Liang!",
         .onboardingThanksBody: "You can change your preferences anytime from the menu bar.\\nMay a tiny glow keep you company while coding alone ❤️",
@@ -611,7 +627,7 @@ private enum ChineseTranslations {
         .onboardingCursorCardTitle: "Cursor",
         .onboardingCursorCardDesc: "Cursor 的 Hook 覆盖了所有关键状态，Liang 会在 Agent 一启动工作时立刻反应。",
         .onboardingOtherAgentsTitle: "其他 Agent",
-        .onboardingOtherAgentsHint: "Codex CLI · CodeBuddy · Trae",
+        .onboardingOtherAgentsHint: "CodeBuddy · Trae",
         .onboardingOtherComingSoon: "敬请期待…",
         .onboardingThanksTitle: "👋 感谢安装 Liang！",
         .onboardingThanksBody: "你可通过菜单中的“设置”更改相关设置项。\\n愿一个小小的光晕陪伴你独自 coding 的时光 ❤️",
@@ -649,9 +665,23 @@ private enum ChineseTranslations {
         .claudeInstallConfirmMessage: "将写入 ~/.claude/settings.json 和 ~/.claude/hooks/claude-bridge.sh，并保留你的其他 Claude Code 配置。是否继续？",
         .claudeSetupMissingSettingsJson: "未检测到 ~/.claude/settings.json",
         .claudeSetupInvalidSettingsJson: "~/.claude/settings.json 内容格式不正确",
-        .onboardingClaudeCardDesc: "Claude Code 的 Hook 覆盖会话、工具与子代理状态，终端里的 Agent 一开工 Liang 就立刻反应。",
+        .onboardingClaudeCardDesc: "Claude Code 的 Hook 覆盖会话、工具与代理状态。支持 CLI、VS Code、JetBrains 与 Desktop 本地会话。",
+        .claudeSupportedClients: "支持的客户端：终端 CLI、VS Code、JetBrains、Desktop 本地会话。云端会话不支持。",
         .onboardingClaudeNotInstalledTitle: "未检测到 Claude Code",
         .onboardingClaudeNotInstalledMessage: "Liang 需要 Claude Code CLI 才能接收 Agent 事件。请先安装 Claude Code；若已安装但未被检测到，仍可继续。",
-        .onboardingClaudeNotInstalledDownload: "安装 Claude Code"
+        .onboardingClaudeNotInstalledDownload: "安装 Claude Code",
+        .enableCodexHooks: "启用 Codex Hooks",
+        .codexHooksStatus: "Codex Hooks 状态",
+        .eventsFileCodex: "事件文件：~/.liang/codex-events.jsonl",
+        .codexInstallDescription: "由 Liang 自动写入 ~/.codex/hooks.json 和桥接脚本。不会读取或上传任何代码、prompt、文件内容。",
+        .codexInstallConfirmMessage: "将写入 ~/.codex/hooks.json 和 ~/.codex/hooks/codex-bridge.sh，并保留你的其他 Codex 配置。是否继续？",
+        .codexSetupMissingHooksJson: "未检测到 ~/.codex/hooks.json",
+        .codexSetupInvalidHooksJson: "~/.codex/hooks.json 内容格式不正确",
+        .codexLimitNote: "Codex 无法区分任务成功与失败，任务结束始终显示为成功。",
+        .codexSupportedClients: "支持的客户端：Codex CLI 与 ChatGPT 桌面版（Codex 模式）。云端会话不支持。",
+        .onboardingCodexCardDesc: "Codex 的 Hook 覆盖会话、工具与子代理状态。支持 Codex CLI 与 ChatGPT 桌面版。任务结束恒为绿色。",
+        .onboardingCodexNotInstalledTitle: "未检测到 Codex",
+        .onboardingCodexNotInstalledMessage: "Liang 需要 Codex CLI 才能接收 Agent 事件。请先安装 Codex；若已安装但未被检测到，仍可继续。",
+        .onboardingCodexNotInstalledDownload: "安装 Codex"
     ]
 }

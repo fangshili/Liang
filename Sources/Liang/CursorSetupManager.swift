@@ -124,7 +124,7 @@ final class CursorSetupManager: ObservableObject {
 
     // MARK: - Static Check
 
-    nonisolated private func performStaticCheck() async -> CursorSetupStatus {
+    private func performStaticCheck() async -> CursorSetupStatus {
         let fileManager = FileManager.default
         let hooksURL = hooksJSONURL
         guard fileManager.fileExists(atPath: hooksURL.path) else {
@@ -186,7 +186,7 @@ final class CursorSetupManager: ObservableObject {
 
     // MARK: - Install
 
-    nonisolated private func performInstall() async throws {
+    private func performInstall() async throws {
         let fileManager = FileManager.default
         logger.info("Starting Cursor Hooks auto-install...")
 

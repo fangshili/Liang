@@ -88,6 +88,8 @@ private enum Step1Alert: Identifiable {
     case cursorNotInstalled
     case claudeInstallConfirmation
     case claudeNotInstalled
+    case codexInstallConfirmation
+    case codexNotInstalled
 
     var id: String {
         switch self {
@@ -95,6 +97,8 @@ private enum Step1Alert: Identifiable {
         case .cursorNotInstalled: return "no-cursor"
         case .claudeInstallConfirmation: return "claude-install"
         case .claudeNotInstalled: return "no-claude"
+        case .codexInstallConfirmation: return "codex-install"
+        case .codexNotInstalled: return "no-codex"
         }
     }
 }
@@ -131,6 +135,12 @@ struct OnboardingStep1View: View {
                     ClaudeHeroCard(
                         onRequestInstall: { activeAlert = .claudeInstallConfirmation },
                         onClaudeNotInstalled: { activeAlert = .claudeNotInstalled }
+                    )
+                    .frame(maxWidth: 560)
+
+                    CodexHeroCard(
+                        onRequestInstall: { activeAlert = .codexInstallConfirmation },
+                        onCodexNotInstalled: { activeAlert = .codexNotInstalled }
                     )
                     .frame(maxWidth: 560)
 
@@ -183,6 +193,26 @@ struct OnboardingStep1View: View {
                     primaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledContinue))),
                     secondaryButton: .default(Text(I18n.shared.string(.onboardingClaudeNotInstalledDownload))) {
                         if let url = URL(string: "https://code.claude.com/docs/en/setup") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                )
+            case .codexInstallConfirmation:
+                return Alert(
+                    title: Text(I18n.shared.string(.installConfirmTitle)),
+                    message: Text(I18n.shared.string(.codexInstallConfirmMessage)),
+                    primaryButton: .cancel(Text(I18n.shared.string(.cancel))),
+                    secondaryButton: .default(Text(I18n.shared.string(.autoInstall))) {
+                        CodexSetupManager.shared.installAutomatically()
+                    }
+                )
+            case .codexNotInstalled:
+                return Alert(
+                    title: Text(I18n.shared.string(.onboardingCodexNotInstalledTitle)),
+                    message: Text(I18n.shared.string(.onboardingCodexNotInstalledMessage)),
+                    primaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledContinue))),
+                    secondaryButton: .default(Text(I18n.shared.string(.onboardingCodexNotInstalledDownload))) {
+                        if let url = URL(string: "https://github.com/openai/codex") {
                             NSWorkspace.shared.open(url)
                         }
                     }
@@ -367,18 +397,103 @@ struct ClaudeHeroCard: View {
     }
 }
 
-/// 从 IDE 图标资源（PNG template image）加载并着色的 SwiftUI 视图。
+// MARK: - Codex Hero Card
+
+struct CodexHeroCard: View {
+    @ObservedObject private var manager = CodexSetupManager.shared
+
+    let onRequestInstall: () -> Void
+    let onCodexNotInstalled: () -> Void
+
+    private var isConfigured: Bool { manager.status.isConfigured }
+
+    private var statusIcon: String {
+        isConfigured ? "checkmark.circle.fill" : "circle"
+    }
+
+    private var statusColor: Color {
+        isConfigured ? Color(red: 0.41, green: 0.84, blue: 0.42) : Color.white.opacity(0.35)
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 16) {
+            // Icon
+            IDEImageIcon(ide: .codex, color: .white)
+                .frame(width: 38, height: 38)
+
+            // Details
+            VStack(alignment: .leading, spacing: 4) {
+                Text(I18n.shared.string(.codex))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white)
+
+                Text(I18n.shared.string(.onboardingCodexCardDesc))
+                    .font(.system(size: 12))
+                    .foregroundColor(Color.white.opacity(0.55))
+                    .lineLimit(3)
+            }
+
+            Spacer()
+
+            // Status + action
+            VStack(alignment: .trailing, spacing: 8) {
+                if isConfigured {
+                    HStack(spacing: 5) {
+                        Image(systemName: statusIcon)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(statusColor)
+                        Text(I18n.shared.string(.onboardingCursorConnected))
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(statusColor)
+                    }
+                } else {
+                    OnboardingButton(
+                        title: I18n.shared.string(.configure),
+                        style: .primary,
+                        size: .small,
+                        action: handleConfigure
+                    )
+                }
+            }
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.white.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                )
+        )
+    }
+
+    private func handleConfigure() {
+        if manager.isCodexInstalled {
+            onRequestInstall()
+        } else {
+            onCodexNotInstalled()
+        }
+    }
+}
+
+/// 从 IDE 图标资源加载的 SwiftUI 视图：template 图标按 color 着色，彩色图标原样显示。
 private struct IDEImageIcon: View {
     let ide: IDE
     let color: Color
 
     var body: some View {
-        if let image = ide.iconImage {
-            Image(nsImage: image)
-                .resizable()
-                .renderingMode(.template)
-                .foregroundColor(color)
-                .aspectRatio(contentMode: .fit)
+        if let image = ide.onboardingIconImage {
+            if image.isTemplate {
+                Image(nsImage: image)
+                    .resizable()
+                    .renderingMode(.template)
+                    .foregroundColor(color)
+                    .aspectRatio(contentMode: .fit)
+            } else {
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            }
         }
     }
 }

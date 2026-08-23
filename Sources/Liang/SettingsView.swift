@@ -342,7 +342,7 @@ private struct CodingAgentPage: View {
 
     private func ideRow(_ ide: IDE) -> some View {
         let isSelected = selectedIDE == ide
-        let isSupported = ide == .cursor || ide == .claudeCode
+        let isSupported = ide == .cursor || ide == .claudeCode || ide == .codex
 
         return HStack(spacing: 12) {
             Text(ide.displayName)
@@ -374,6 +374,8 @@ private struct CodingAgentPage: View {
                     CursorPage(settings: settings)
                 case .claudeCode:
                     ClaudeCodePage(settings: settings)
+                case .codex:
+                    CodexPage(settings: settings)
                 default:
                     placeholderView(ide: selectedIDE)
                 }
@@ -407,6 +409,7 @@ private struct CodingAgentPage: View {
         switch ide {
         case .cursor: return I18n.shared.string(.enableCursorHooks)
         case .claudeCode: return I18n.shared.string(.enableClaudeCodeHooks)
+        case .codex: return I18n.shared.string(.enableCodexHooks)
         default: return I18n.shared.string(.ideSupportComingSoon, ide.displayName)
         }
     }
@@ -534,6 +537,17 @@ private struct ClaudeCodePage: View {
                 }
             }
 
+            // 支持的客户端（本地会话），避免用户误以为是桥接问题
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: "info.circle")
+                    .foregroundColor(.orange)
+                Text(I18n.shared.string(.claudeSupportedClients))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+
             VStack(alignment: .leading, spacing: 10) {
                 Text(I18n.shared.string(.operations))
                     .font(.system(size: 13, weight: .medium))
@@ -549,6 +563,102 @@ private struct ClaudeCodePage: View {
         Binding(
             get: { settings.isIDEEnabled(.claudeCode) },
             set: { settings.setIDEEnabled(.claudeCode, enabled: $0) }
+        )
+    }
+}
+
+private struct CodexPage: View {
+    @ObservedObject var settings: GlowSettings
+    @EnvironmentObject var i18n: I18n
+    @ObservedObject private var engine = StateEngine.shared
+    @ObservedObject private var adapter = FileHookAdapter.codex
+
+    private var statusText: String {
+        if !adapter.isConnected {
+            return I18n.shared.string(.stateDisconnected)
+        }
+        return engine.lastEvent == nil ? I18n.shared.string(.waitingFirstEvent) : I18n.shared.string(.running)
+    }
+
+    var body: some View {
+        let _ = i18n.currentLanguage
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(I18n.shared.string(.featureSwitches))
+                    .font(.system(size: 13, weight: .medium))
+                Toggle(I18n.shared.string(.enableCodexHooks), isOn: codexEnabledBinding)
+                    .help(I18n.shared.string(.enableCodexHooks))
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text(I18n.shared.string(.configuration))
+                    .font(.system(size: 13, weight: .medium))
+                CodexSetupSection(showCardBackgrounds: false)
+                    .disabled(!settings.isIDEEnabled(.codex))
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text(I18n.shared.string(.codexHooksStatus))
+                    .font(.system(size: 13, weight: .medium))
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(adapter.isConnected ? Color.green : Color.red)
+                            .frame(width: 8, height: 8)
+                        Text(statusText)
+                            .font(.system(size: 13))
+                        Spacer()
+                    }
+
+                    if let lastEvent = engine.lastEvent {
+                        Text(I18n.shared.string(.recentEventFormat2, lastEvent.hook))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Text(I18n.shared.string(.eventsFileCodex))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            // Codex 无法区分成功/失败，恒 success（见 docs/codex-integration.md 限制 1）
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: "info.circle")
+                    .foregroundColor(.orange)
+                Text(I18n.shared.string(.codexLimitNote))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+
+            // 支持的客户端（本地会话），避免用户误以为是桥接问题
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: "info.circle")
+                    .foregroundColor(.orange)
+                Text(I18n.shared.string(.codexSupportedClients))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text(I18n.shared.string(.operations))
+                    .font(.system(size: 13, weight: .medium))
+                Button(I18n.shared.string(.clearError)) {
+                    engine.clearError()
+                }
+                .disabled(engine.state != .error)
+            }
+        }
+    }
+
+    private var codexEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { settings.isIDEEnabled(.codex) },
+            set: { settings.setIDEEnabled(.codex, enabled: $0) }
         )
     }
 }
@@ -843,7 +953,7 @@ private struct AboutPage: View {
                 Text(I18n.shared.string(.appName))
                     .font(.system(size: 13, weight: .medium))
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(I18n.shared.string(.versionFormat, "0.1.5"))
+                    Text(I18n.shared.string(.versionFormat, "0.1.6"))
                         .font(.system(size: 13))
                     Text(I18n.shared.string(.aboutTitle))
                         .font(.caption)

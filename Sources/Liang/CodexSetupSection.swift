@@ -1,8 +1,8 @@
 import SwiftUI
 import AppKit
 
-struct ClaudeSetupSection: View {
-    @StateObject private var manager = ClaudeCodeSetupManager.shared
+struct CodexSetupSection: View {
+    @StateObject private var manager = CodexSetupManager.shared
     @State private var activeAlert: SetupAlert?
 
     var showCardBackgrounds = true
@@ -29,7 +29,7 @@ struct ClaudeSetupSection: View {
             statusRow
 
             if !manager.status.isConfigured {
-                Text(I18n.shared.string(.claudeInstallDescription))
+                Text(I18n.shared.string(.codexInstallDescription))
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -51,7 +51,7 @@ struct ClaudeSetupSection: View {
                     case .installConfirmation:
                         return Alert(
                             title: Text(I18n.shared.string(.installConfirmTitle)),
-                            message: Text(I18n.shared.string(.claudeInstallConfirmMessage)),
+                            message: Text(I18n.shared.string(.codexInstallConfirmMessage)),
                             primaryButton: .cancel(Text(I18n.shared.string(.cancel))),
                             secondaryButton: .default(Text(I18n.shared.string(.autoInstall))) {
                                 manager.installAutomatically()
@@ -59,13 +59,13 @@ struct ClaudeSetupSection: View {
                         )
                     case .notInstalled:
                         return Alert(
-                            title: Text(I18n.shared.string(.onboardingClaudeNotInstalledTitle)),
-                            message: Text(I18n.shared.string(.onboardingClaudeNotInstalledMessage)),
+                            title: Text(I18n.shared.string(.onboardingCodexNotInstalledTitle)),
+                            message: Text(I18n.shared.string(.onboardingCodexNotInstalledMessage)),
                             primaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledContinue))) {
                                 manager.installAutomatically()
                             },
-                            secondaryButton: .default(Text(I18n.shared.string(.onboardingClaudeNotInstalledDownload))) {
-                                if let url = URL(string: "https://code.claude.com/docs/en/setup") {
+                            secondaryButton: .default(Text(I18n.shared.string(.onboardingCodexNotInstalledDownload))) {
+                                if let url = URL(string: "https://github.com/openai/codex") {
                                     NSWorkspace.shared.open(url)
                                 }
                             }
@@ -124,7 +124,7 @@ struct ClaudeSetupSection: View {
     }
 
     private func handleConfigure() {
-        if manager.isClaudeCodeInstalled {
+        if manager.isCodexInstalled {
             activeAlert = .installConfirmation
         } else {
             activeAlert = .notInstalled

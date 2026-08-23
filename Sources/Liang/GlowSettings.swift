@@ -57,6 +57,9 @@ final class GlowSettings: ObservableObject, Codable {
     /// 是否已完成首次启动的 Claude Code 配置引导。
     @Published var hasCompletedClaudeSetup: Bool = false
 
+    /// 是否已完成首次启动的 Codex 配置引导。
+    @Published var hasCompletedCodexSetup: Bool = false
+
     /// 是否已完成首次启动的 Onboarding 整体引导（两步流程）。
     /// 与 `hasCompletedCursorSetup` 区别：后者只关心 Cursor 这一项，前者要求用户走完整个引导流程。
     @Published var hasCompletedOnboarding: Bool = false
@@ -75,6 +78,7 @@ final class GlowSettings: ObservableObject, Codable {
         case ideEnabled
         case hasCompletedCursorSetup
         case hasCompletedClaudeSetup
+        case hasCompletedCodexSetup
         case hasCompletedOnboarding
     }
 
@@ -150,6 +154,7 @@ final class GlowSettings: ObservableObject, Codable {
 
         hasCompletedCursorSetup = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedCursorSetup) ?? false
         hasCompletedClaudeSetup = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedClaudeSetup) ?? false
+        hasCompletedCodexSetup = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedCodexSetup) ?? false
         hasCompletedOnboarding = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding) ?? false
 
         setupAutosave()
@@ -201,6 +206,7 @@ final class GlowSettings: ObservableObject, Codable {
 
         try container.encode(hasCompletedCursorSetup, forKey: .hasCompletedCursorSetup)
         try container.encode(hasCompletedClaudeSetup, forKey: .hasCompletedClaudeSetup)
+        try container.encode(hasCompletedCodexSetup, forKey: .hasCompletedCodexSetup)
         try container.encode(hasCompletedOnboarding, forKey: .hasCompletedOnboarding)
     }
 
@@ -235,6 +241,7 @@ final class GlowSettings: ObservableObject, Codable {
         ideEnabled = defaults.ideEnabled
         hasCompletedCursorSetup = defaults.hasCompletedCursorSetup
         hasCompletedClaudeSetup = defaults.hasCompletedClaudeSetup
+        hasCompletedCodexSetup = defaults.hasCompletedCodexSetup
         hasCompletedOnboarding = defaults.hasCompletedOnboarding
     }
 
@@ -307,6 +314,7 @@ final class GlowSettings: ObservableObject, Codable {
             ideEnabled = loaded.ideEnabled
             hasCompletedCursorSetup = loaded.hasCompletedCursorSetup
             hasCompletedClaudeSetup = loaded.hasCompletedClaudeSetup
+            hasCompletedCodexSetup = loaded.hasCompletedCodexSetup
             hasCompletedOnboarding = loaded.hasCompletedOnboarding
             return true
         } catch {

@@ -37,18 +37,36 @@ extension IDE {
         IDE.allCases.first { $0.sourceValue == source } ?? .cursor
     }
 
-    /// 任务列表来源图标（template image，可用 contentTintColor 着色）。
-    /// 新增 IDE 时在此补一个资源名 + 资源文件即可。
+    /// 任务列表来源图标（template image，单色 tint）。
     var iconImage: NSImage? {
-        let name: String
         switch self {
-        case .cursor: name = "cursor-icon"
-        case .claudeCode: name = "claude-icon"
+        case .cursor: return Self.loadIcon("cursor-icon")
+        case .claudeCode: return Self.loadIcon("claude-icon")
+        case .codex: return Self.loadIcon("codex-task-icon")
         default: return nil
         }
+    }
+
+    /// onboarding 卡片图标：cursor/claude 为 template（可 tint），codex 为彩色原图。
+    var onboardingIconImage: NSImage? {
+        switch self {
+        case .cursor: return Self.loadIcon("cursor-icon")
+        case .claudeCode: return Self.loadIcon("claude-icon")
+        case .codex: return Self.loadColoredIcon("codex-onboarding-icon")
+        default: return nil
+        }
+    }
+
+    private static func loadIcon(_ name: String) -> NSImage? {
         guard let url = Bundle.module.url(forResource: name, withExtension: "png"),
               let image = NSImage(contentsOf: url) else { return nil }
         image.isTemplate = true
         return image
+    }
+
+    /// 加载彩色图标（非 template，保留原始颜色）。
+    private static func loadColoredIcon(_ name: String) -> NSImage? {
+        guard let url = Bundle.module.url(forResource: name, withExtension: "png") else { return nil }
+        return NSImage(contentsOf: url)
     }
 }

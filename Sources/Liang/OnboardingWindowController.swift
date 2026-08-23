@@ -67,6 +67,9 @@ final class OnboardingWindowController: NSWindowController {
         if case .configured = ClaudeCodeSetupManager.shared.status {
             GlowSettings.shared.hasCompletedClaudeSetup = true
         }
+        if case .configured = CodexSetupManager.shared.status {
+            GlowSettings.shared.hasCompletedCodexSetup = true
+        }
         Self.log.info("OnboardingWindowController complete()")
 
         guard let window = self.window else { return }

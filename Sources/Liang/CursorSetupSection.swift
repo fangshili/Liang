@@ -1,8 +1,9 @@
 import SwiftUI
+import AppKit
 
 struct CursorSetupSection: View {
     @StateObject private var manager = CursorSetupManager.shared
-    @State private var showInstallConfirmation = false
+    @State private var activeAlert: SetupAlert?
 
     var showCardBackgrounds = true
 
@@ -34,7 +35,7 @@ struct CursorSetupSection: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 Button {
-                    showInstallConfirmation = true
+                    handleConfigure()
                 } label: {
                     if manager.isInstalling {
                         ProgressView()
@@ -45,15 +46,31 @@ struct CursorSetupSection: View {
                     }
                 }
                 .disabled(manager.isInstalling)
-                .alert(isPresented: $showInstallConfirmation) {
-                    Alert(
-                        title: Text(I18n.shared.string(.installConfirmTitle)),
-                        message: Text(I18n.shared.string(.installConfirmMessage)),
-                        primaryButton: .cancel(Text(I18n.shared.string(.cancel))),
-                        secondaryButton: .default(Text(I18n.shared.string(.autoInstall))) {
-                            manager.installAutomatically()
-                        }
-                    )
+                .alert(item: $activeAlert) { alert in
+                    switch alert {
+                    case .installConfirmation:
+                        return Alert(
+                            title: Text(I18n.shared.string(.installConfirmTitle)),
+                            message: Text(I18n.shared.string(.installConfirmMessage)),
+                            primaryButton: .cancel(Text(I18n.shared.string(.cancel))),
+                            secondaryButton: .default(Text(I18n.shared.string(.autoInstall))) {
+                                manager.installAutomatically()
+                            }
+                        )
+                    case .notInstalled:
+                        return Alert(
+                            title: Text(I18n.shared.string(.onboardingCursorNotInstalledTitle)),
+                            message: Text(I18n.shared.string(.onboardingCursorNotInstalledMessage)),
+                            primaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledContinue))) {
+                                manager.installAutomatically()
+                            },
+                            secondaryButton: .default(Text(I18n.shared.string(.onboardingCursorNotInstalledDownload))) {
+                                if let url = URL(string: "https://cursor.com") {
+                                    NSWorkspace.shared.open(url)
+                                }
+                            }
+                        )
+                    }
                 }
             }
 
@@ -103,6 +120,26 @@ struct CursorSetupSection: View {
         case .notConfigured: return I18n.shared.string(.cursorSetupStatusNotConfigured)
         case .unknown: return I18n.shared.string(.cursorSetupStatusChecking)
         default: return I18n.shared.string(.cursorSetupStatusChecking)
+        }
+    }
+
+    private func handleConfigure() {
+        if manager.isCursorInstalled {
+            activeAlert = .installConfirmation
+        } else {
+            activeAlert = .notInstalled
+        }
+    }
+}
+
+private enum SetupAlert: Identifiable {
+    case installConfirmation
+    case notInstalled
+
+    var id: String {
+        switch self {
+        case .installConfirmation: return "install"
+        case .notInstalled: return "not-installed"
         }
     }
 }

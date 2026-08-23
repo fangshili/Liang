@@ -10,9 +10,9 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BUILD_DIR="$PROJECT_DIR/build"
 APP_NAME="Liang"
 BUNDLE_ID="com.liang.app"
-VERSION="0.1.5"
+VERSION="0.1.6"
 # Sparkle 使用 CFBundleVersion 判断是否有新版本，每次发布必须递增。
-BUILD_NUMBER="6"
+BUILD_NUMBER="7"
 ICON_SOURCE="$PROJECT_DIR/assets/icon-l-glow.png"
 
 # 签名与公证配置

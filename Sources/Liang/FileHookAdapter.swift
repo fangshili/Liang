@@ -229,7 +229,8 @@ extension FileHookAdapter {
 
     static let cursor = FileHookAdapter(id: .cursor, eventsURL: defaultEventsURL(for: .cursor))
     static let claudeCode = FileHookAdapter(id: .claudeCode, eventsURL: defaultEventsURL(for: .claudeCode))
+    static let codex = FileHookAdapter(id: .codex, eventsURL: defaultEventsURL(for: .codex))
 
     /// 所有已接入的 adapter（新增 IDE 时在此登记）。
-    static let all: [FileHookAdapter] = [cursor, claudeCode]
+    static let all: [FileHookAdapter] = [cursor, claudeCode, codex]
 }
