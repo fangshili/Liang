@@ -43,7 +43,7 @@ struct TaskItem: Identifiable, Equatable {
                 base = I18n.shared.string(.taskSessionStart)
             case "sessionEnd":
                 base = I18n.shared.string(.taskSessionEnd)
-            case "afterAgentResponse":
+            case "afterAgentResponse", "notification":
                 base = I18n.shared.string(.taskWaitingInput)
             case "afterAgentThought":
                 base = I18n.shared.string(.taskThinking)

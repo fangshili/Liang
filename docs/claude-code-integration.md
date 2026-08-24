@@ -61,7 +61,7 @@
 | `SubagentStop` | subagent 结束 | `subagentStop` |
 | `Stop` | Claude 正常完成一轮 | `stop(status=completed)` |
 | `StopFailure` | 轮次因 API 错误结束 | `stop(status=error)` |
-| `Notification` | 发出通知 | （无直接对应，可忽略或映射 waiting） |
+| `Notification` | 发出通知（`permission_prompt`/`idle_prompt`） | 当前桥接脚本未映射 → waiting 缺失 |
 
 ### stdin JSON 输入字段
 
@@ -103,6 +103,8 @@
 | `StopFailure` | `error` |
 | `SubagentStop`（`is_error=true` / `false`） | `error` / `success` |
 | `SessionEnd` | `idle` |
+
+> **waiting 缺失**：Claude Code 有 `Notification`（`permission_prompt`/`idle_prompt`）与 `PermissionRequest`（权限请求/等待确认）事件，但当前 `claude-bridge.sh` 的 `EVENT_MAP` 未映射它们，因此「等待用户确认/输入」场景（权限弹框、等待输入）Liang 停留在 `processing`，**无法显示 waiting 黄色**。此为桥接脚本漏映射，可后续补映射修复。
 
 ## 五、5 处本质差异（决定额外工作量）
 

@@ -66,7 +66,8 @@ extension HookEvent {
             return .processing
         case "afterAgentResponse",
              "beforeShellExecution",
-             "beforeMCPExecution":
+             "beforeMCPExecution",
+             "notification":
             return .waiting
         case "subagentStop", "stop":
             let normalized = status?.lowercased() ?? ""

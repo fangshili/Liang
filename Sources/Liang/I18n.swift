@@ -368,7 +368,7 @@ enum LocalizedKey: String {
     case codebuddyHooksStatus = "CodeBuddy Hooks Status"
     case eventsFileCodebuddy = "Events file: ~/.liang/codebuddy-events.jsonl"
     case codebuddyInstallDescription = "Automatically write ~/.codebuddy/settings.json and the bridge script. Liang will not read or upload any code, prompts, or file contents."
-    case codebuddyInstallConfirmMessage = "This will write to ~/.codebuddy/settings.json and ~/.codebuddy/hooks/codebuddy-bridge.sh, preserving your other CodeBuddy settings. Continue?"
+    case codebuddyInstallConfirmMessage = "This will write to ~/.codebuddy/settings.json and ~/.codebuddy/hooks/codebuddy-bridge.sh, preserving your other CodeBuddy settings. Continue? If CodeBuddy is running, review the changes in /hooks or restart the session for them to take effect."
     case codebuddySetupMissingSettingsJson = "~/.codebuddy/settings.json not detected"
     case codebuddySetupInvalidSettingsJson = "~/.codebuddy/settings.json format is invalid"
     case codebuddyLimitNote = "CodeBuddy cannot distinguish task success from failure, so finished tasks always show as success."
@@ -705,7 +705,7 @@ private enum ChineseTranslations {
         .codebuddyHooksStatus: "CodeBuddy Hooks 状态",
         .eventsFileCodebuddy: "事件文件：~/.liang/codebuddy-events.jsonl",
         .codebuddyInstallDescription: "由 Liang 自动写入 ~/.codebuddy/settings.json 和桥接脚本。不会读取或上传任何代码、prompt、文件内容。",
-        .codebuddyInstallConfirmMessage: "将写入 ~/.codebuddy/settings.json 和 ~/.codebuddy/hooks/codebuddy-bridge.sh，并保留你的其他 CodeBuddy 配置。是否继续？",
+        .codebuddyInstallConfirmMessage: "将写入 ~/.codebuddy/settings.json 和 ~/.codebuddy/hooks/codebuddy-bridge.sh，并保留你的其他 CodeBuddy 配置。是否继续？若 CodeBuddy 正在运行，请在 CodeBuddy 中打开 /hooks 审查应用更改，或重启会话使其生效。",
         .codebuddySetupMissingSettingsJson: "未检测到 ~/.codebuddy/settings.json",
         .codebuddySetupInvalidSettingsJson: "~/.codebuddy/settings.json 内容格式不正确",
         .codebuddyLimitNote: "CodeBuddy 无法区分任务成功与失败，任务结束始终显示为成功。",

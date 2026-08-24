@@ -24,7 +24,7 @@ Codex（OpenAI Codex CLI，Rust 实现）**有完整的 hooks 机制**，且与 
 Codex 事件（CamelCase）：`SessionStart`、`SessionEnd`、`SubagentStart`、`SubagentStop`、`PreToolUse`、`PostToolUse`、`UserPromptSubmit`、`Stop`、`PreCompact`、`PostCompact`、`PermissionRequest`。
 
 与 Claude Code 对比：
-- **Codex 独有**：`PermissionRequest`（权限审批，本项目无关可忽略）
+- **Codex 独有**：`PermissionRequest`（权限审批 = 等待用户确认；当前桥接脚本未映射 → waiting 缺失，见限制 5）
 - **Codex 缺失**：`PostToolUseFailure`、`StopFailure`、`Notification`
 
 ## 三、配置结构（hooks.json）
@@ -73,6 +73,9 @@ Codex 没有 `prompt_id`（每次 prompt 一个 UUID），只有 `turn_id`（回
 
 ### 限制 4：`SessionEnd` 触发延迟
 Codex 的 `SessionEnd` 在「会话空闲 30 分钟」后才触发（非关闭即触发），且该 hook 默认 timeout 仅 1 秒。`idle` 状态切换会比 Cursor / Claude Code 慢，需依赖现有「5 分钟无事件心跳超时」兜底。
+
+### 限制 5：无法感知「等待确认」（waiting 缺失）
+Codex 有 `PermissionRequest` 事件（权限审批/等待用户确认时触发），但 `codex-bridge.sh` 的 `EVENT_MAP` 未映射它，因此权限确认弹框出现时 Liang 停留在 `processing`（`PreToolUse` 后、`PostToolUse` 前无事件），**无法显示 waiting 黄色**。与 Claude Code、CodeBuddy 桌面版的 waiting 缺失同源；此为桥接脚本漏映射，可后续补映射修复（非产品硬限制）。
 
 ## 六、事件 → LiangState 映射
 

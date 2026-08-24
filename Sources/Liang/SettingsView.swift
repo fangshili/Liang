@@ -439,17 +439,14 @@ private struct CodingAgentPage: View {
         }
     }
 
-    /// 检测各 Coding Agent 是否已安装，未安装的自动禁用开关。
+    /// 检测各 Coding Agent 是否已安装，仅刷新 UI 状态（禁用开关、显示「未安装」角标）。
+    /// 不在此处改 ideEnabled：检测路径未覆盖 pnpm/volta/fnm 等安装方式时会误关正在工作的集成。
+    /// 用户主动开启时仍由各开关 binding 实时拦截未安装的 agent。
     private func refreshInstallationState() {
         cursorManager.refresh()
         claudeManager.refresh()
         codexManager.refresh()
         codeBuddyManager.refresh()
-
-        if !cursorManager.isCursorInstalled { settings.setIDEEnabled(.cursor, enabled: false) }
-        if !claudeManager.isClaudeCodeInstalled { settings.setIDEEnabled(.claudeCode, enabled: false) }
-        if !codexManager.isCodexInstalled { settings.setIDEEnabled(.codex, enabled: false) }
-        if !codeBuddyManager.isCodeBuddyInstalled { settings.setIDEEnabled(.codeBuddy, enabled: false) }
     }
 
     /// 某个 IDE 是否已安装（供开关禁用与「未安装」提示使用）。
@@ -1148,7 +1145,7 @@ private struct AboutPage: View {
                 Text(I18n.shared.string(.appName))
                     .font(.system(size: 13, weight: .medium))
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(I18n.shared.string(.versionFormat, "0.1.8"))
+                    Text(I18n.shared.string(.versionFormat, "0.1.9"))
                         .font(.system(size: 13))
                     Text(I18n.shared.string(.aboutTitle))
                         .font(.caption)

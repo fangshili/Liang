@@ -81,7 +81,9 @@ final class ClaudeCodeSetupManager: ObservableObject {
         "SubagentStart",
         "SubagentStop",
         "Stop",
-        "StopFailure"
+        "StopFailure",
+        "Notification",
+        "PermissionRequest"
     ]
 
     nonisolated private var settingsJSONURL: URL {
@@ -159,13 +161,16 @@ final class ClaudeCodeSetupManager: ObservableObject {
             for group in groups {
                 guard let handlers = group["hooks"] as? [[String: Any]] else { continue }
                 for handler in handlers {
-                    if let cmd = handler["command"] as? String, !cmd.isEmpty {
-                        if scriptPath == nil {
-                            scriptPath = resolveScriptPath(cmd)
-                        }
-                        found = true
-                        break
+                    guard let cmd = handler["command"] as? String, !cmd.isEmpty else { continue }
+                    // 只认指向本应用桥接脚本的 command，避免用户自己的 hook 被误判为「已配置」。
+                    let isLiang = (cmd as NSString).standardizingPath == defaultScriptURL.path
+                        || (cmd as NSString).lastPathComponent == "claude-bridge.sh"
+                    guard isLiang else { continue }
+                    if scriptPath == nil {
+                        scriptPath = resolveScriptPath(cmd)
                     }
+                    found = true
+                    break
                 }
                 if found { break }
             }

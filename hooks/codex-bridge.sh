@@ -8,15 +8,8 @@ LOG_DIR="$HOME/.liang"
 mkdir -p "$LOG_DIR"
 DEBUG_PATH="$LOG_DIR/bridge-debug.log"
 ERROR_PATH="$LOG_DIR/bridge-error.log"
-ENV_PATH="$LOG_DIR/bridge-env.log"
 
 NOW=$(python3 -c 'import datetime; print(datetime.datetime.now(datetime.timezone.utc).isoformat())')
-
-{
-  echo ""
-  echo "=== $NOW hook=$0 argv=$* ==="
-  env | grep -Ei 'CODEX|OPENAI|HOOK|AGENT' | sort
-} >> "$ENV_PATH"
 
 # payload 经 stdin 传入（不经过 argv，避免大 payload 触发 ARG_MAX 溢出）；由 Python 直接读取。
 python3 -c '
@@ -28,9 +21,6 @@ now = sys.argv[1]
 EVENTS_PATH = os.path.expanduser("~/.liang/codex-events.jsonl")
 DEBUG_PATH = os.path.expanduser("~/.liang/bridge-debug.log")
 ERROR_PATH = os.path.expanduser("~/.liang/bridge-error.log")
-
-with open(DEBUG_PATH, "a") as f:
-    f.write("%s codex hook invoked, payload_bytes=%d\n" % (now, len(payload)))
 
 if not payload or not payload.strip():
     with open(ERROR_PATH, "a") as f:
@@ -56,6 +46,7 @@ EVENT_MAP = {
     "SubagentStart": "subagentStart",
     "SubagentStop": "subagentStop",
     "Stop": "stop",
+    "PermissionRequest": "notification",
 }
 
 hook = EVENT_MAP.get(event_name)
@@ -79,11 +70,14 @@ out = {
     "status": status,
 }
 
+# 事件文件上限 10MB，超过截断重开（Liang 只读最近事件，历史无价值；截断后 FileHookAdapter 自动重连）。
+try:
+    if os.path.getsize(EVENTS_PATH) > 10 * 1024 * 1024:
+        open(EVENTS_PATH, "w").close()
+except OSError:
+    pass
 with open(EVENTS_PATH, "a") as f:
     f.write(json.dumps(out, ensure_ascii=False) + "\n")
-
-with open(DEBUG_PATH, "a") as f:
-    f.write("%s wrote event: %s status=%s\n" % (now, hook, status))
 
 sys.exit(0)
 ' "$NOW"

@@ -8,16 +8,8 @@ mkdir -p "$LOG_DIR"
 EVENTS_PATH="$LOG_DIR/cursor-events.jsonl"
 DEBUG_PATH="$LOG_DIR/bridge-debug.log"
 ERROR_PATH="$LOG_DIR/bridge-error.log"
-ENV_PATH="$LOG_DIR/bridge-env.log"
 
 NOW=$(python3 -c 'import datetime; print(datetime.datetime.now(datetime.timezone.utc).isoformat())')
-
-# 记录环境变量，便于排查 Cursor 如何传递上下文。
-{
-  echo ""
-  echo "=== $NOW hook=$0 argv=$* ==="
-  env | grep -Ei 'CURSOR|HOOK|AGENT|VSCODE|SSH' | sort
-} >> "$ENV_PATH"
 
 # payload 经 stdin 传入（不经过 argv，避免 ARG_MAX 溢出与 ps 可见）；由 Python 直接读取。
 python3 -c '
@@ -33,9 +25,6 @@ EVENTS_PATH = os.path.join(LOG_DIR, "cursor-events.jsonl")
 DEBUG_PATH = os.path.join(LOG_DIR, "bridge-debug.log")
 ERROR_PATH = os.path.join(LOG_DIR, "bridge-error.log")
 
-with open(DEBUG_PATH, "a") as f:
-    f.write("%s hook invoked, payload_bytes=%d, cwd=%s\n" % (now, len(payload_json), os.getcwd()))
-
 # 必须向 stdout 输出 JSON 响应，否则 Cursor 可能认为 Hook 失败或重复调用。
 if not payload_json or not payload_json.strip():
     with open(ERROR_PATH, "a") as f:
@@ -47,7 +36,7 @@ try:
     raw = json.loads(payload_json)
 except json.JSONDecodeError as e:
     with open(ERROR_PATH, "a") as f:
-        f.write("%s json decode error: %s, payload=%r\n" % (now, e, payload_json[:500]))
+        f.write("%s json decode error: %s\n" % (now, e))
     print("{\"permission\":\"allow\",\"continue\":true}")
     sys.exit(0)
 
@@ -65,11 +54,14 @@ out = {
     "duration_ms": raw.get("duration") or raw.get("duration_ms")
 }
 
+# 事件文件上限 10MB，超过截断重开（Liang 只读最近事件，历史无价值；截断后 FileHookAdapter 自动重连）。
+try:
+    if os.path.getsize(EVENTS_PATH) > 10 * 1024 * 1024:
+        open(EVENTS_PATH, "w").close()
+except OSError:
+    pass
 with open(EVENTS_PATH, "a") as f:
     f.write(json.dumps(out, ensure_ascii=False) + "\n")
-
-with open(DEBUG_PATH, "a") as f:
-    f.write("%s wrote event: %s\n" % (now, out["hook"]))
 
 print("{\"permission\":\"allow\",\"continue\":true}")
 ' "$NOW"

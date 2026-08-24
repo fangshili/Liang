@@ -355,7 +355,7 @@ final class StateEngine: ObservableObject {
     /// 终态 hook（sessionEnd / stop / subagentStop）不在此列，以便让标题跟随结束事件。
     private let genericTitleHooks: Set<String> = [
         "sessionStart", "beforeSubmitPrompt", "afterAgentResponse",
-        "afterAgentThought", "postToolUseFailure", "subagentStart"
+        "afterAgentThought", "postToolUseFailure", "subagentStart", "notification"
     ]
 
     /// 被认为是终态标题来源的 hook。
