@@ -321,6 +321,7 @@ private struct CodingAgentPage: View {
     @ObservedObject private var cursorManager = CursorSetupManager.shared
     @ObservedObject private var claudeManager = ClaudeCodeSetupManager.shared
     @ObservedObject private var codexManager = CodexSetupManager.shared
+    @ObservedObject private var codeBuddyManager = CodeBuddySetupManager.shared
 
     var body: some View {
         let _ = i18n.currentLanguage
@@ -349,7 +350,7 @@ private struct CodingAgentPage: View {
 
     private func ideRow(_ ide: IDE) -> some View {
         let isSelected = selectedIDE == ide
-        let isSupported = ide == .cursor || ide == .claudeCode || ide == .codex
+        let isSupported = ide != .trae
         let installed = isIDEInstalled(ide)
 
         return HStack(spacing: 12) {
@@ -389,6 +390,8 @@ private struct CodingAgentPage: View {
                     ClaudeCodePage(settings: settings)
                 case .codex:
                     CodexPage(settings: settings)
+                case .codeBuddy:
+                    CodeBuddyPage(settings: settings)
                 default:
                     placeholderView(ide: selectedIDE)
                 }
@@ -431,6 +434,7 @@ private struct CodingAgentPage: View {
         case .cursor: return I18n.shared.string(.enableCursorHooks)
         case .claudeCode: return I18n.shared.string(.enableClaudeCodeHooks)
         case .codex: return I18n.shared.string(.enableCodexHooks)
+        case .codeBuddy: return I18n.shared.string(.enableCodeBuddyHooks)
         default: return I18n.shared.string(.ideSupportComingSoon, ide.displayName)
         }
     }
@@ -440,10 +444,12 @@ private struct CodingAgentPage: View {
         cursorManager.refresh()
         claudeManager.refresh()
         codexManager.refresh()
+        codeBuddyManager.refresh()
 
         if !cursorManager.isCursorInstalled { settings.setIDEEnabled(.cursor, enabled: false) }
         if !claudeManager.isClaudeCodeInstalled { settings.setIDEEnabled(.claudeCode, enabled: false) }
         if !codexManager.isCodexInstalled { settings.setIDEEnabled(.codex, enabled: false) }
+        if !codeBuddyManager.isCodeBuddyInstalled { settings.setIDEEnabled(.codeBuddy, enabled: false) }
     }
 
     /// 某个 IDE 是否已安装（供开关禁用与「未安装」提示使用）。
@@ -452,6 +458,7 @@ private struct CodingAgentPage: View {
         case .cursor: return cursorManager.isCursorInstalled
         case .claudeCode: return claudeManager.isClaudeCodeInstalled
         case .codex: return codexManager.isCodexInstalled
+        case .codeBuddy: return codeBuddyManager.isCodeBuddyInstalled
         default: return false
         }
     }
@@ -525,6 +532,17 @@ private struct CursorPage: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
+            }
+
+            // 支持的客户端（本地会话），避免用户误以为是桥接问题
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: "info.circle")
+                    .foregroundColor(.orange)
+                Text(I18n.shared.string(.cursorSupportedClients))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
             }
 
             VStack(alignment: .leading, spacing: 10) {
@@ -731,6 +749,110 @@ private struct CodexPage: View {
                     return
                 }
                 settings.setIDEEnabled(.codex, enabled: newValue)
+            }
+        )
+    }
+}
+
+private struct CodeBuddyPage: View {
+    @ObservedObject var settings: GlowSettings
+    @EnvironmentObject var i18n: I18n
+    @ObservedObject private var engine = StateEngine.shared
+    @ObservedObject private var adapter = FileHookAdapter.codeBuddy
+    @ObservedObject private var setupManager = CodeBuddySetupManager.shared
+
+    private var statusText: String {
+        if !adapter.isConnected {
+            return I18n.shared.string(.stateDisconnected)
+        }
+        return engine.lastEvent == nil ? I18n.shared.string(.waitingFirstEvent) : I18n.shared.string(.running)
+    }
+
+    var body: some View {
+        let _ = i18n.currentLanguage
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(I18n.shared.string(.featureSwitches))
+                    .font(.system(size: 13, weight: .medium))
+                Toggle(I18n.shared.string(.enableCodeBuddyHooks), isOn: codebuddyEnabledBinding)
+                    .help(I18n.shared.string(.enableCodeBuddyHooks))
+                    .disabled(!setupManager.isCodeBuddyInstalled)
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text(I18n.shared.string(.configuration))
+                    .font(.system(size: 13, weight: .medium))
+                CodeBuddySetupSection(showCardBackgrounds: false)
+                    .disabled(!settings.isIDEEnabled(.codeBuddy))
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text(I18n.shared.string(.codebuddyHooksStatus))
+                    .font(.system(size: 13, weight: .medium))
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(adapter.isConnected ? Color.green : Color.red)
+                            .frame(width: 8, height: 8)
+                        Text(statusText)
+                            .font(.system(size: 13))
+                        Spacer()
+                    }
+
+                    if let lastEvent = engine.lastEvent {
+                        Text(I18n.shared.string(.recentEventFormat2, lastEvent.hook))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Text(I18n.shared.string(.eventsFileCodebuddy))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            // CodeBuddy 无法区分成功/失败，恒 success（见 docs/codebuddy-integration.md 限制 1）
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: "info.circle")
+                    .foregroundColor(.orange)
+                Text(I18n.shared.string(.codebuddyLimitNote))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+
+            // 支持的客户端（本地会话），避免用户误以为是桥接问题
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: "info.circle")
+                    .foregroundColor(.orange)
+                Text(I18n.shared.string(.codebuddySupportedClients))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text(I18n.shared.string(.operations))
+                    .font(.system(size: 13, weight: .medium))
+                Button(I18n.shared.string(.clearError)) {
+                    engine.clearError()
+                }
+                .disabled(engine.state != .error)
+            }
+        }
+    }
+
+    private var codebuddyEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { settings.isIDEEnabled(.codeBuddy) },
+            set: { newValue in
+                if newValue && !setupManager.isCodeBuddyInstalled {
+                    settings.setIDEEnabled(.codeBuddy, enabled: false)
+                    return
+                }
+                settings.setIDEEnabled(.codeBuddy, enabled: newValue)
             }
         )
     }
@@ -1026,7 +1148,7 @@ private struct AboutPage: View {
                 Text(I18n.shared.string(.appName))
                     .font(.system(size: 13, weight: .medium))
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(I18n.shared.string(.versionFormat, "0.1.7"))
+                    Text(I18n.shared.string(.versionFormat, "0.1.8"))
                         .font(.system(size: 13))
                     Text(I18n.shared.string(.aboutTitle))
                         .font(.caption)

@@ -134,6 +134,10 @@ final class CodexSetupManager: ObservableObject {
     // MARK: - Static Check
 
     private func performStaticCheck() async -> CodexSetupStatus {
+        // 若 agent 未安装，即使残留有配置文件，也不应视为「已配置」。
+        guard isCodexInstalled else {
+            return .notConfigured(reason: I18n.shared.string(.onboardingCodexNotInstalledTitle))
+        }
         let fileManager = FileManager.default
         let hooksURL = hooksJSONURL
         guard fileManager.fileExists(atPath: hooksURL.path) else {

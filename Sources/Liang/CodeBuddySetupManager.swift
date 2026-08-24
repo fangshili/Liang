@@ -3,10 +3,10 @@ import AppKit
 import Combine
 import os
 
-private let logger = Logger(subsystem: "com.liang", category: "ClaudeCodeSetupManager")
+private let logger = Logger(subsystem: "com.liang", category: "CodeBuddySetupManager")
 
-/// Claude Code Hooks 配置状态。
-enum ClaudeCodeSetupStatus: Equatable {
+/// CodeBuddy Hooks 配置状态。
+enum CodeBuddySetupStatus: Equatable {
     case unknown
     case notConfigured(reason: String)
     case partial(missingHooks: [String], scriptPath: String?)
@@ -18,7 +18,7 @@ enum ClaudeCodeSetupStatus: Equatable {
     }
 }
 
-enum ClaudeCodeSetupError: LocalizedError {
+enum CodeBuddySetupError: LocalizedError {
     case bridgeScriptNotFoundInBundle
     case writeFailed(Error)
 
@@ -32,37 +32,36 @@ enum ClaudeCodeSetupError: LocalizedError {
     }
 }
 
-/// 负责 Claude Code Hooks 的自动安装与静态检测。
-/// Claude Code 是 CLI 工具，配置写入 `~/.claude/settings.json`（三层嵌套结构，含 matcher 与 type）。
+/// 负责 CodeBuddy Hooks 的自动安装与静态检测。
+/// CodeBuddy Code 是 CLI 工具，配置写入 `~/.codebuddy/settings.json`（三层嵌套结构，含 matcher 与 type）。
 @MainActor
-final class ClaudeCodeSetupManager: ObservableObject {
-    static let shared = ClaudeCodeSetupManager()
+final class CodeBuddySetupManager: ObservableObject {
+    static let shared = CodeBuddySetupManager()
 
-    @Published private(set) var status: ClaudeCodeSetupStatus = .unknown
+    @Published private(set) var status: CodeBuddySetupStatus = .unknown
     @Published private(set) var isInstalling = false
     @Published private(set) var lastInstallError: String?
 
     private let fileManager = FileManager.default
 
-    /// 本机是否已安装 Claude Code CLI。由 `refresh()` 同步检测并更新，UI 可观察。
-    @Published private(set) var isClaudeCodeInstalled: Bool = false
+    /// 本机是否已安装 CodeBuddy Code CLI。由 `refresh()` 同步检测并更新，UI 可观察。
+    @Published private(set) var isCodeBuddyInstalled: Bool = false
 
-    /// 检测 Claude Code CLI 是否已安装：只认可执行的 `claude` 二进制。
-    /// 注意：不能检查 `~/.claude` 目录——Claude Desktop 桌面应用也会创建该目录，
-    /// 会导致误判为已安装（而 Desktop 并不执行 hooks）。
-    private func detectClaudeCodeInstalled() -> Bool {
+    /// 检测 CodeBuddy Code CLI 是否已安装：只认可执行的 `codebuddy` 二进制。
+    /// 覆盖三种官方安装方式：npm 全局、Homebrew、官方 install.sh 原生二进制。
+    private func detectCodeBuddyInstalled() -> Bool {
         let home = fileManager.homeDirectoryForCurrentUser.path
         var candidates = [
-            "/opt/homebrew/bin/claude",
-            "/usr/local/bin/claude",
-            "\(home)/.npm-global/bin/claude",
-            "\(home)/.local/bin/claude",
-            "\(home)/.claude/local/claude"
+            "/opt/homebrew/bin/codebuddy",        // Homebrew (Apple Silicon)
+            "/usr/local/bin/codebuddy",           // Homebrew (Intel)
+            "\(home)/.npm-global/bin/codebuddy",  // npm/pnpm/yarn 全局
+            "\(home)/.local/bin/codebuddy",       // 官方 install.sh / 原生二进制
+            "\(home)/.codebuddy/bin/codebuddy"    // 原生二进制可能路径
         ]
-        // 补充 nvm 用户：~/.nvm/versions/node/*/bin/claude（遍历所有已装 node 版本）。
+        // 补充 nvm 用户：~/.nvm/versions/node/*/bin/codebuddy（遍历所有已装 node 版本）。
         let nvmVersionsDir = URL(fileURLWithPath: home).appendingPathComponent(".nvm/versions/node")
         if let versions = try? fileManager.contentsOfDirectory(atPath: nvmVersionsDir.path) {
-            candidates.append(contentsOf: versions.map { "\(nvmVersionsDir.path)/\($0)/bin/claude" })
+            candidates.append(contentsOf: versions.map { "\(nvmVersionsDir.path)/\($0)/bin/codebuddy" })
         }
 
         for path in candidates where fileManager.isExecutableFile(atPath: path) {
@@ -71,52 +70,50 @@ final class ClaudeCodeSetupManager: ObservableObject {
         return false
     }
 
+    // CodeBuddy 事件（无 SubagentStart / PostToolUseFailure / StopFailure）。
     nonisolated let requiredHooks: [String] = [
         "SessionStart",
         "SessionEnd",
         "UserPromptSubmit",
         "PreToolUse",
         "PostToolUse",
-        "PostToolUseFailure",
-        "SubagentStart",
         "SubagentStop",
-        "Stop",
-        "StopFailure"
+        "Stop"
     ]
 
     nonisolated private var settingsJSONURL: URL {
         FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".claude/settings.json")
+            .appendingPathComponent(".codebuddy/settings.json")
     }
 
     nonisolated private var defaultScriptURL: URL {
         FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".claude/hooks/claude-bridge.sh")
+            .appendingPathComponent(".codebuddy/hooks/codebuddy-bridge.sh")
     }
 
     private init() {}
 
     /// 刷新安装状态与静态配置检测结果。
     func refresh() {
-        isClaudeCodeInstalled = detectClaudeCodeInstalled()
+        isCodeBuddyInstalled = detectCodeBuddyInstalled()
         Task {
             let newStatus = await performStaticCheck()
             self.status = newStatus
         }
     }
 
-    /// 自动安装：将应用内桥接脚本复制到 ~/.claude/hooks/ 并合并写入 settings.json。
+    /// 自动安装：将应用内桥接脚本复制到 ~/.codebuddy/hooks/ 并合并写入 settings.json。
     func installAutomatically() {
         guard !isInstalling else { return }
-        guard isClaudeCodeInstalled else { return }
+        guard isCodeBuddyInstalled else { return }
         isInstalling = true
         lastInstallError = nil
 
         Task {
             do {
                 try await performInstall()
-                // 配置成功即自动启用，与 Cursor 首次配置即启用（cursorHooksEnabled 默认 true）的行为保持一致。
-                GlowSettings.shared.setIDEEnabled(.claudeCode, enabled: true)
+                // 配置成功即自动启用，与 Claude Code 首次配置即启用的行为保持一致。
+                GlowSettings.shared.setIDEEnabled(.codeBuddy, enabled: true)
                 let newStatus = await performStaticCheck()
                 self.status = newStatus
                 self.isInstalling = false
@@ -129,21 +126,21 @@ final class ClaudeCodeSetupManager: ObservableObject {
 
     // MARK: - Static Check
 
-    private func performStaticCheck() async -> ClaudeCodeSetupStatus {
+    private func performStaticCheck() async -> CodeBuddySetupStatus {
         // 若 agent 未安装，即使残留有配置文件，也不应视为「已配置」。
-        guard isClaudeCodeInstalled else {
-            return .notConfigured(reason: I18n.shared.string(.onboardingClaudeNotInstalledTitle))
+        guard isCodeBuddyInstalled else {
+            return .notConfigured(reason: I18n.shared.string(.onboardingCodebuddyNotInstalledTitle))
         }
         let fileManager = FileManager.default
         let settingsURL = settingsJSONURL
         guard fileManager.fileExists(atPath: settingsURL.path) else {
-            return .notConfigured(reason: I18n.shared.string(.claudeSetupMissingSettingsJson))
+            return .notConfigured(reason: I18n.shared.string(.codebuddySetupMissingSettingsJson))
         }
 
         guard let data = fileManager.contents(atPath: settingsURL.path),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let hooks = json["hooks"] as? [String: Any] else {
-            return .notConfigured(reason: I18n.shared.string(.claudeSetupInvalidSettingsJson))
+            return .notConfigured(reason: I18n.shared.string(.codebuddySetupInvalidSettingsJson))
         }
 
         var scriptPath: String?
@@ -198,7 +195,7 @@ final class ClaudeCodeSetupManager: ObservableObject {
             cmd = fileManager.homeDirectoryForCurrentUser.path + String(cmd.dropFirst(2))
         } else if cmd.hasPrefix("./") {
             cmd = fileManager.homeDirectoryForCurrentUser
-                .appendingPathComponent(".claude/\(String(cmd.dropFirst(2)))")
+                .appendingPathComponent(".codebuddy/\(String(cmd.dropFirst(2)))")
                 .path
         }
         return (cmd as NSString).standardizingPath
@@ -208,13 +205,13 @@ final class ClaudeCodeSetupManager: ObservableObject {
 
     private func performInstall() async throws {
         let fileManager = FileManager.default
-        logger.info("Starting Claude Code Hooks auto-install...")
+        logger.info("Starting CodeBuddy Hooks auto-install...")
 
         // 尝试多个可能的资源路径（SPM 资源 bundle vs .app bundle）。
         let candidates: [(String, String?)] = [
-            ("claude-bridge", "Resources/hooks"),   // SPM Bundle.module
-            ("claude-bridge", "hooks"),              // .app Bundle.main (manual copy)
-            ("claude-bridge", nil),                  // fallback: root
+            ("codebuddy-bridge", "Resources/hooks"),   // SPM Bundle.module
+            ("codebuddy-bridge", "hooks"),              // .app Bundle.main (manual copy)
+            ("codebuddy-bridge", nil),                  // fallback: root
         ]
         var sourceURL: URL?
         for (name, subdir) in candidates {
@@ -225,8 +222,8 @@ final class ClaudeCodeSetupManager: ObservableObject {
             }
         }
         guard let sourceURL else {
-            logger.error("claude-bridge.sh not found in bundle")
-            throw ClaudeCodeSetupError.bridgeScriptNotFoundInBundle
+            logger.error("codebuddy-bridge.sh not found in bundle")
+            throw CodeBuddySetupError.bridgeScriptNotFoundInBundle
         }
 
         let hooksDir = defaultScriptURL.deletingLastPathComponent()
@@ -238,8 +235,7 @@ final class ClaudeCodeSetupManager: ObservableObject {
         try fileManager.copyItem(at: sourceURL, to: defaultScriptURL)
         try fileManager.setAttributes([.posixPermissions: NSNumber(value: 0o755)], ofItemAtPath: defaultScriptURL.path)
 
-        // H2 教训：读取现有 settings.json 并合并，只改 hooks 字段，
-        // 保留 permissions / model / env / statusLine 等用户既有配置。
+        // 读取现有 settings.json 并合并，只改 hooks 字段，保留用户既有配置。
         var existingConfig: [String: Any] = [:]
         if let existingData = fileManager.contents(atPath: settingsJSONURL.path),
            let json = try? JSONSerialization.jsonObject(with: existingData) as? [String: Any] {
@@ -253,7 +249,7 @@ final class ClaudeCodeSetupManager: ObservableObject {
             let handler: [String: Any] = ["type": "command", "command": scriptPath]
             let groups = hooks[event] as? [[String: Any]] ?? []
 
-            // 移除旧的 Liang 条目（按 command 指向 claude-bridge.sh），保留其他 handler。
+            // 移除旧的 Liang 条目（按 command 指向 codebuddy-bridge.sh），保留其他 handler。
             var keptGroups: [[String: Any]] = []
             for group in groups {
                 guard var handlers = group["hooks"] as? [[String: Any]] else {
@@ -278,6 +274,6 @@ final class ClaudeCodeSetupManager: ObservableObject {
         let configData = try JSONSerialization.data(withJSONObject: existingConfig, options: [.prettyPrinted, .sortedKeys])
         try configData.write(to: settingsJSONURL, options: .atomic)
 
-        logger.info("Claude Code Hooks auto-install completed")
+        logger.info("CodeBuddy Hooks auto-install completed")
     }
 }

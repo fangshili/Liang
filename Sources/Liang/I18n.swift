@@ -213,6 +213,7 @@ enum LocalizedKey: String {
     case running = "Running"
     case recentEventFormat2 = "Recent Event: %@"
     case eventsFile = "Events file: ~/.liang/cursor-events.jsonl"
+    case cursorSupportedClients = "Supported clients: Cursor desktop app (local sessions). Cloud and remote sessions are not supported."
     case recheck = "Recheck"
     case dynamicCheck = "Dynamic Check"
     case dynamicCheckHint = "Click \"New Agent\" or send a message in Cursor. Liang will listen for events within 30 seconds."
@@ -361,6 +362,21 @@ enum LocalizedKey: String {
     case onboardingCodexNotInstalledTitle = "Codex Not Installed"
     case onboardingCodexNotInstalledMessage = "Liang requires the Codex CLI to receive agent events. Please install Codex first, then configure it here."
     case onboardingCodexNotInstalledDownload = "Install Codex"
+
+    // MARK: - Settings - IDE / CodeBuddy
+    case enableCodeBuddyHooks = "Enable CodeBuddy Hooks"
+    case codebuddyHooksStatus = "CodeBuddy Hooks Status"
+    case eventsFileCodebuddy = "Events file: ~/.liang/codebuddy-events.jsonl"
+    case codebuddyInstallDescription = "Automatically write ~/.codebuddy/settings.json and the bridge script. Liang will not read or upload any code, prompts, or file contents."
+    case codebuddyInstallConfirmMessage = "This will write to ~/.codebuddy/settings.json and ~/.codebuddy/hooks/codebuddy-bridge.sh, preserving your other CodeBuddy settings. Continue?"
+    case codebuddySetupMissingSettingsJson = "~/.codebuddy/settings.json not detected"
+    case codebuddySetupInvalidSettingsJson = "~/.codebuddy/settings.json format is invalid"
+    case codebuddyLimitNote = "CodeBuddy cannot distinguish task success from failure, so finished tasks always show as success."
+    case codebuddySupportedClients = "Supported clients: CodeBuddy Code CLI and IDE plugins (VS Code, JetBrains, Zed). Cloud sessions are not supported."
+    case onboardingCodebuddyCardDesc = "CodeBuddy hooks cover session, tool, and subagent states. Supports the CodeBuddy Code CLI and IDE plugins. Tasks always end green."
+    case onboardingCodebuddyNotInstalledTitle = "CodeBuddy Not Installed"
+    case onboardingCodebuddyNotInstalledMessage = "Liang requires the CodeBuddy Code CLI to receive agent events. Please install CodeBuddy first, then configure it here."
+    case onboardingCodebuddyNotInstalledDownload = "Install CodeBuddy"
     case notInstalledHint = "Not Installed"
 }
 
@@ -381,7 +397,7 @@ private enum EnglishTranslations {
         .onboardingCursorCardTitle: "Cursor",
         .onboardingCursorCardDesc: "Cursor hooks cover every meaningful state, so Liang reacts the moment your agent is working.",
         .onboardingOtherAgentsTitle: "Other agents",
-        .onboardingOtherAgentsHint: "CodeBuddy · Trae",
+        .onboardingOtherAgentsHint: "More coding agents",
         .onboardingOtherComingSoon: "Coming soon...",
         .onboardingThanksTitle: "👋 Thanks for installing Liang!",
         .onboardingThanksBody: "You can change your preferences anytime from the menu bar.\\nMay a tiny glow keep you company while coding alone ❤️",
@@ -547,6 +563,7 @@ private enum ChineseTranslations {
         .running: "运行中",
         .recentEventFormat2: "最近事件：%@",
         .eventsFile: "事件文件：~/.liang/cursor-events.jsonl",
+        .cursorSupportedClients: "支持的客户端：Cursor 桌面版（本地会话）。云端与远程会话不支持。",
         .recheck: "重新检测",
         .dynamicCheck: "动态检测",
         .dynamicCheckHint: "请在 Cursor 中点击「New Agent」或发送一条消息，Liang 将在 30 秒内监听事件。",
@@ -628,7 +645,7 @@ private enum ChineseTranslations {
         .onboardingCursorCardTitle: "Cursor",
         .onboardingCursorCardDesc: "Cursor 的 Hook 覆盖了所有关键状态，Liang 会在 Agent 一启动工作时立刻反应。",
         .onboardingOtherAgentsTitle: "其他 Agent",
-        .onboardingOtherAgentsHint: "CodeBuddy · Trae",
+        .onboardingOtherAgentsHint: "更多 Coding Agent",
         .onboardingOtherComingSoon: "敬请期待…",
         .onboardingThanksTitle: "👋 感谢安装 Liang！",
         .onboardingThanksBody: "你可通过菜单中的“设置”更改相关设置项。\\n愿一个小小的光晕陪伴你独自 coding 的时光 ❤️",
@@ -684,6 +701,19 @@ private enum ChineseTranslations {
         .onboardingCodexNotInstalledTitle: "未检测到 Codex",
         .onboardingCodexNotInstalledMessage: "Liang 需要 Codex CLI 才能接收 Agent 事件。请先安装 Codex，然后再回来配置。",
         .onboardingCodexNotInstalledDownload: "安装 Codex",
+        .enableCodeBuddyHooks: "启用 CodeBuddy Hooks",
+        .codebuddyHooksStatus: "CodeBuddy Hooks 状态",
+        .eventsFileCodebuddy: "事件文件：~/.liang/codebuddy-events.jsonl",
+        .codebuddyInstallDescription: "由 Liang 自动写入 ~/.codebuddy/settings.json 和桥接脚本。不会读取或上传任何代码、prompt、文件内容。",
+        .codebuddyInstallConfirmMessage: "将写入 ~/.codebuddy/settings.json 和 ~/.codebuddy/hooks/codebuddy-bridge.sh，并保留你的其他 CodeBuddy 配置。是否继续？",
+        .codebuddySetupMissingSettingsJson: "未检测到 ~/.codebuddy/settings.json",
+        .codebuddySetupInvalidSettingsJson: "~/.codebuddy/settings.json 内容格式不正确",
+        .codebuddyLimitNote: "CodeBuddy 无法区分任务成功与失败，任务结束始终显示为成功。",
+        .codebuddySupportedClients: "支持的客户端：CodeBuddy Code CLI 与 IDE 插件（VS Code、JetBrains、Zed）。云端会话不支持。",
+        .onboardingCodebuddyCardDesc: "CodeBuddy 的 Hook 覆盖会话、工具与子代理状态。支持 CodeBuddy Code CLI 与 IDE 插件。任务结束恒为绿色。",
+        .onboardingCodebuddyNotInstalledTitle: "未检测到 CodeBuddy",
+        .onboardingCodebuddyNotInstalledMessage: "Liang 需要 CodeBuddy Code CLI 才能接收 Agent 事件。请先安装 CodeBuddy，然后再回来配置。",
+        .onboardingCodebuddyNotInstalledDownload: "安装 CodeBuddy",
         .notInstalledHint: "未安装"
     ]
 }

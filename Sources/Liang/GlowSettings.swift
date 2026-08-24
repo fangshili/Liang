@@ -60,6 +60,9 @@ final class GlowSettings: ObservableObject, Codable {
     /// 是否已完成首次启动的 Codex 配置引导。
     @Published var hasCompletedCodexSetup: Bool = false
 
+    /// 是否已完成首次启动的 CodeBuddy 配置引导。
+    @Published var hasCompletedCodeBuddySetup: Bool = false
+
     /// 是否已完成首次启动的 Onboarding 整体引导（两步流程）。
     /// 与 `hasCompletedCursorSetup` 区别：后者只关心 Cursor 这一项，前者要求用户走完整个引导流程。
     @Published var hasCompletedOnboarding: Bool = false
@@ -79,6 +82,7 @@ final class GlowSettings: ObservableObject, Codable {
         case hasCompletedCursorSetup
         case hasCompletedClaudeSetup
         case hasCompletedCodexSetup
+        case hasCompletedCodeBuddySetup
         case hasCompletedOnboarding
     }
 
@@ -155,6 +159,7 @@ final class GlowSettings: ObservableObject, Codable {
         hasCompletedCursorSetup = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedCursorSetup) ?? false
         hasCompletedClaudeSetup = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedClaudeSetup) ?? false
         hasCompletedCodexSetup = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedCodexSetup) ?? false
+        hasCompletedCodeBuddySetup = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedCodeBuddySetup) ?? false
         hasCompletedOnboarding = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding) ?? false
 
         setupAutosave()
@@ -207,6 +212,7 @@ final class GlowSettings: ObservableObject, Codable {
         try container.encode(hasCompletedCursorSetup, forKey: .hasCompletedCursorSetup)
         try container.encode(hasCompletedClaudeSetup, forKey: .hasCompletedClaudeSetup)
         try container.encode(hasCompletedCodexSetup, forKey: .hasCompletedCodexSetup)
+        try container.encode(hasCompletedCodeBuddySetup, forKey: .hasCompletedCodeBuddySetup)
         try container.encode(hasCompletedOnboarding, forKey: .hasCompletedOnboarding)
     }
 
@@ -242,6 +248,7 @@ final class GlowSettings: ObservableObject, Codable {
         hasCompletedCursorSetup = defaults.hasCompletedCursorSetup
         hasCompletedClaudeSetup = defaults.hasCompletedClaudeSetup
         hasCompletedCodexSetup = defaults.hasCompletedCodexSetup
+        hasCompletedCodeBuddySetup = defaults.hasCompletedCodeBuddySetup
         hasCompletedOnboarding = defaults.hasCompletedOnboarding
     }
 
@@ -315,6 +322,7 @@ final class GlowSettings: ObservableObject, Codable {
             hasCompletedCursorSetup = loaded.hasCompletedCursorSetup
             hasCompletedClaudeSetup = loaded.hasCompletedClaudeSetup
             hasCompletedCodexSetup = loaded.hasCompletedCodexSetup
+            hasCompletedCodeBuddySetup = loaded.hasCompletedCodeBuddySetup
             hasCompletedOnboarding = loaded.hasCompletedOnboarding
             return true
         } catch {

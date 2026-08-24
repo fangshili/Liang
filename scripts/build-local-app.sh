@@ -13,7 +13,7 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BUILD_DIR="$PROJECT_DIR/build"
 APP_NAME="Liang"
 BUNDLE_ID="com.liang.app"
-VERSION="0.1.7"
+VERSION="0.1.8"
 ICON_SOURCE="$PROJECT_DIR/assets/icon-l-glow.png"
 
 # 默认 Debug 构建；可通过 ./scripts/build-local-app.sh release 改为 Release

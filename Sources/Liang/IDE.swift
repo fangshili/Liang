@@ -43,16 +43,18 @@ extension IDE {
         case .cursor: return Self.loadIcon("cursor-icon")
         case .claudeCode: return Self.loadIcon("claude-icon")
         case .codex: return Self.loadIcon("codex-task-icon")
+        case .codeBuddy: return Self.loadIcon("codebuddy-task-icon")
         default: return nil
         }
     }
 
-    /// onboarding 卡片图标：cursor/claude 为 template（可 tint），codex 为彩色原图。
+    /// onboarding 卡片图标：cursor/claude 为 template（可 tint），codex/codebuddy 为彩色原图。
     var onboardingIconImage: NSImage? {
         switch self {
         case .cursor: return Self.loadIcon("cursor-icon")
         case .claudeCode: return Self.loadIcon("claude-icon")
         case .codex: return Self.loadColoredIcon("codex-onboarding-icon")
+        case .codeBuddy: return Self.loadColoredIcon("codebuddy-onboarding-icon")
         default: return nil
         }
     }

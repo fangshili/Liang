@@ -38,6 +38,7 @@ struct OnboardingRootView: View {
     @ObservedObject private var cursorSetup = CursorSetupManager.shared
     @ObservedObject private var claudeSetup = ClaudeCodeSetupManager.shared
     @ObservedObject private var codexSetup = CodexSetupManager.shared
+    @ObservedObject private var codeBuddySetup = CodeBuddySetupManager.shared
     @ObservedObject private var coordinator = OnboardingFlowCoordinator.shared
 
     var body: some View {
@@ -64,7 +65,7 @@ struct OnboardingRootView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .frame(width: 760, height: 560)
+        .frame(width: 760, height: 672)
         .animation(.easeInOut(duration: 0.35), value: coordinator.currentStep)
         .onAppear { handleInitialEntry() }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { n in
@@ -82,6 +83,7 @@ struct OnboardingRootView: View {
         cursorSetup.refresh()
         claudeSetup.refresh()
         codexSetup.refresh()
+        codeBuddySetup.refresh()
     }
 }
 
@@ -94,6 +96,8 @@ private enum Step1Alert: Identifiable {
     case claudeNotInstalled
     case codexInstallConfirmation
     case codexNotInstalled
+    case codebuddyInstallConfirmation
+    case codebuddyNotInstalled
 
     var id: String {
         switch self {
@@ -103,6 +107,8 @@ private enum Step1Alert: Identifiable {
         case .claudeNotInstalled: return "no-claude"
         case .codexInstallConfirmation: return "codex-install"
         case .codexNotInstalled: return "no-codex"
+        case .codebuddyInstallConfirmation: return "codebuddy-install"
+        case .codebuddyNotInstalled: return "no-codebuddy"
         }
     }
 }
@@ -145,6 +151,12 @@ struct OnboardingStep1View: View {
                     CodexHeroCard(
                         onRequestInstall: { activeAlert = .codexInstallConfirmation },
                         onCodexNotInstalled: { activeAlert = .codexNotInstalled }
+                    )
+                    .frame(maxWidth: 560)
+
+                    CodeBuddyHeroCard(
+                        onRequestInstall: { activeAlert = .codebuddyInstallConfirmation },
+                        onCodeBuddyNotInstalled: { activeAlert = .codebuddyNotInstalled }
                     )
                     .frame(maxWidth: 560)
 
@@ -221,6 +233,26 @@ struct OnboardingStep1View: View {
                     },
                     secondaryButton: .cancel(Text(I18n.shared.string(.cancel)))
                 )
+            case .codebuddyInstallConfirmation:
+                return Alert(
+                    title: Text(I18n.shared.string(.installConfirmTitle)),
+                    message: Text(I18n.shared.string(.codebuddyInstallConfirmMessage)),
+                    primaryButton: .cancel(Text(I18n.shared.string(.cancel))),
+                    secondaryButton: .default(Text(I18n.shared.string(.autoInstall))) {
+                        CodeBuddySetupManager.shared.installAutomatically()
+                    }
+                )
+            case .codebuddyNotInstalled:
+                return Alert(
+                    title: Text(I18n.shared.string(.onboardingCodebuddyNotInstalledTitle)),
+                    message: Text(I18n.shared.string(.onboardingCodebuddyNotInstalledMessage)),
+                    primaryButton: .default(Text(I18n.shared.string(.onboardingCodebuddyNotInstalledDownload))) {
+                        if let url = URL(string: "https://www.codebuddy.ai") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    },
+                    secondaryButton: .cancel(Text(I18n.shared.string(.cancel)))
+                )
             }
         }
     }
@@ -265,9 +297,19 @@ struct CursorHeroCard: View {
 
             // Details
             VStack(alignment: .leading, spacing: 4) {
-                Text(I18n.shared.string(.onboardingCursorCardTitle))
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
+                HStack(spacing: 6) {
+                    Text(I18n.shared.string(.onboardingCursorCardTitle))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+                    if !manager.isCursorInstalled {
+                        Text(I18n.shared.string(.notInstalledHint))
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.orange)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Color.orange.opacity(0.18)))
+                    }
+                }
 
                 Text(I18n.shared.string(.onboardingCursorCardDesc))
                     .font(.system(size: 12))
@@ -348,9 +390,19 @@ struct ClaudeHeroCard: View {
 
             // Details
             VStack(alignment: .leading, spacing: 4) {
-                Text(I18n.shared.string(.claudeCode))
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
+                HStack(spacing: 6) {
+                    Text(I18n.shared.string(.claudeCode))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+                    if !manager.isClaudeCodeInstalled {
+                        Text(I18n.shared.string(.notInstalledHint))
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.orange)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Color.orange.opacity(0.18)))
+                    }
+                }
 
                 Text(I18n.shared.string(.onboardingClaudeCardDesc))
                     .font(.system(size: 12))
@@ -427,9 +479,19 @@ struct CodexHeroCard: View {
 
             // Details
             VStack(alignment: .leading, spacing: 4) {
-                Text(I18n.shared.string(.codex))
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
+                HStack(spacing: 6) {
+                    Text(I18n.shared.string(.codex))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+                    if !manager.isCodexInstalled {
+                        Text(I18n.shared.string(.notInstalledHint))
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.orange)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Color.orange.opacity(0.18)))
+                    }
+                }
 
                 Text(I18n.shared.string(.onboardingCodexCardDesc))
                     .font(.system(size: 12))
@@ -476,6 +538,95 @@ struct CodexHeroCard: View {
             onRequestInstall()
         } else {
             onCodexNotInstalled()
+        }
+    }
+}
+
+// MARK: - CodeBuddy Hero Card
+
+struct CodeBuddyHeroCard: View {
+    @ObservedObject private var manager = CodeBuddySetupManager.shared
+
+    let onRequestInstall: () -> Void
+    let onCodeBuddyNotInstalled: () -> Void
+
+    private var isConfigured: Bool { manager.status.isConfigured }
+
+    private var statusIcon: String {
+        isConfigured ? "checkmark.circle.fill" : "circle"
+    }
+
+    private var statusColor: Color {
+        isConfigured ? Color(red: 0.41, green: 0.84, blue: 0.42) : Color.white.opacity(0.35)
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 16) {
+            // Icon
+            IDEImageIcon(ide: .codeBuddy, color: .white)
+                .frame(width: 38, height: 38)
+
+            // Details
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(I18n.shared.string(.codebuddy))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+                    if !manager.isCodeBuddyInstalled {
+                        Text(I18n.shared.string(.notInstalledHint))
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.orange)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Color.orange.opacity(0.18)))
+                    }
+                }
+
+                Text(I18n.shared.string(.onboardingCodebuddyCardDesc))
+                    .font(.system(size: 12))
+                    .foregroundColor(Color.white.opacity(0.55))
+                    .lineLimit(3)
+            }
+
+            Spacer()
+
+            // Status + action
+            VStack(alignment: .trailing, spacing: 8) {
+                if isConfigured {
+                    HStack(spacing: 5) {
+                        Image(systemName: statusIcon)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(statusColor)
+                        Text(I18n.shared.string(.onboardingCursorConnected))
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(statusColor)
+                    }
+                } else {
+                    OnboardingButton(
+                        title: I18n.shared.string(.configure),
+                        style: .primary,
+                        size: .small,
+                        action: handleConfigure
+                    )
+                }
+            }
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.white.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                )
+        )
+    }
+
+    private func handleConfigure() {
+        if manager.isCodeBuddyInstalled {
+            onRequestInstall()
+        } else {
+            onCodeBuddyNotInstalled()
         }
     }
 }
@@ -1042,11 +1193,11 @@ struct ThanksView: View {
         VStack(spacing: 16) {
             Text(i18n.string(.onboardingThanksTitle))
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.primary)
+                .foregroundColor(.white)
 
             Text(thanksBody)
                 .font(.system(size: 13))
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.white.opacity(0.6))
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
 
@@ -1059,7 +1210,7 @@ struct ThanksView: View {
         }
         .padding(28)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(Color(red: 0.07, green: 0.07, blue: 0.085))
     }
 }
 

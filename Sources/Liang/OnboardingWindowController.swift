@@ -24,6 +24,7 @@ final class OnboardingWindowController: NSWindowController {
         )
         window.title = "Liang"
         window.titlebarAppearsTransparent = true
+        window.appearance = NSAppearance(named: .darkAqua)
         window.isReleasedWhenClosed = false
         window.center()
         self.init(window: window)
@@ -70,6 +71,9 @@ final class OnboardingWindowController: NSWindowController {
         if case .configured = CodexSetupManager.shared.status {
             GlowSettings.shared.hasCompletedCodexSetup = true
         }
+        if case .configured = CodeBuddySetupManager.shared.status {
+            GlowSettings.shared.hasCompletedCodeBuddySetup = true
+        }
         Self.log.info("OnboardingWindowController complete()")
 
         guard let window = self.window else { return }
@@ -90,6 +94,7 @@ final class OnboardingWindowController: NSWindowController {
         thanksWindow.title = ""
         thanksWindow.titlebarAppearsTransparent = true
         thanksWindow.titleVisibility = .hidden
+        thanksWindow.appearance = NSAppearance(named: .darkAqua)
         thanksWindow.isReleasedWhenClosed = false
         thanksWindow.center()
 

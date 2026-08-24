@@ -21,10 +21,13 @@ let package = Package(
                 .copy("Resources/hooks/liang-bridge.sh"),
                 .copy("Resources/hooks/claude-bridge.sh"),
                 .copy("Resources/hooks/codex-bridge.sh"),
+                .copy("Resources/hooks/codebuddy-bridge.sh"),
                 .copy("Resources/Icons/cursor-icon.png"),
                 .copy("Resources/Icons/claude-icon.png"),
                 .copy("Resources/Icons/codex-task-icon.png"),
-                .copy("Resources/Icons/codex-onboarding-icon.png")
+                .copy("Resources/Icons/codex-onboarding-icon.png"),
+                .copy("Resources/Icons/codebuddy-task-icon.png"),
+                .copy("Resources/Icons/codebuddy-onboarding-icon.png")
             ]
         )
     ]
