@@ -1137,6 +1137,7 @@ private struct LanguageSegmentButtonStyle: ButtonStyle {
 
 private struct AboutPage: View {
     @EnvironmentObject var i18n: I18n
+    @ObservedObject private var crashDetector = CrashReportDetector.shared
 
     var body: some View {
         let _ = i18n.currentLanguage
@@ -1145,7 +1146,7 @@ private struct AboutPage: View {
                 Text(I18n.shared.string(.appName))
                     .font(.system(size: 13, weight: .medium))
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(I18n.shared.string(.versionFormat, "0.1.9"))
+                    Text(I18n.shared.string(.versionFormat, "0.1.10"))
                         .font(.system(size: 13))
                     Text(I18n.shared.string(.aboutTitle))
                         .font(.caption)
@@ -1161,11 +1162,31 @@ private struct AboutPage: View {
 
             GroupBox(I18n.shared.string(.changelog)) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(I18n.shared.string(.changelogPlaceholder))
-                        .foregroundColor(.secondary)
+                    Button {
+                        if let url = URL(string: "https://github.com/fangshili/Liang/releases") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    } label: {
+                        Label(I18n.shared.string(.viewChangelog), systemImage: "arrow.up.right.square")
+                    }
+                    .buttonStyle(.link)
                 }
                 .font(.caption)
                 .padding(4)
+            }
+
+            if crashDetector.latestCrashReportURL != nil {
+                GroupBox(I18n.shared.string(.crashReportTitle)) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(I18n.shared.string(.crashReportDetected))
+                            .foregroundColor(.secondary)
+                        Button(I18n.shared.string(.crashReportReveal)) {
+                            crashDetector.revealInFinder()
+                        }
+                    }
+                    .font(.caption)
+                    .padding(4)
+                }
             }
         }
     }

@@ -38,6 +38,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Apply device-specific defaults for first-run users.
         applyDeviceDefaultsIfNeeded()
 
+        // 检测上次运行是否崩溃（扫描系统崩溃日志目录），供「设置 → 关于」展示。
+        CrashReportDetector.shared.check()
+
         StatusBarController.shared.start()
         GlowController.shared.start()
         CursorGlowController.shared.start()

@@ -269,7 +269,10 @@ enum LocalizedKey: String {
     case madeWithLove = "Made with ❤️"
     case versionFormat = "Version %@"
     case changelog = "Changelog"
-    case changelogPlaceholder = "Future updates will be shown here."
+    case viewChangelog = "View Release Notes"
+    case crashReportTitle = "Crash Report"
+    case crashReportDetected = "A crash was detected in a previous session."
+    case crashReportReveal = "Reveal in Finder"
 
     // MARK: - Errors
     case cannotOpenEventsFile = "Cannot open events file: %@"
@@ -617,7 +620,10 @@ private enum ChineseTranslations {
         .madeWithLove: "Made with ❤️",
         .versionFormat: "版本 %@",
         .changelog: "更新日志",
-        .changelogPlaceholder: "未来版本更新内容将在此展示",
+        .viewChangelog: "查看更新日志",
+        .crashReportTitle: "崩溃反馈",
+        .crashReportDetected: "检测到上次运行发生崩溃。",
+        .crashReportReveal: "在 Finder 中显示",
         .onboardingWindowTitle: "配置 Cursor Hooks",
         .welcomeTitle: "欢迎使用 Liang",
         .welcomeBody: "Liang 需要通过 Cursor Hooks 获取工作状态，才能在刘海处显示光晕提示。",

@@ -10,9 +10,9 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BUILD_DIR="$PROJECT_DIR/build"
 APP_NAME="Liang"
 BUNDLE_ID="com.liang.app"
-VERSION="0.1.9"
+VERSION="0.1.10"
 # Sparkle 使用 CFBundleVersion 判断是否有新版本，每次发布必须递增。
-BUILD_NUMBER="10"
+BUILD_NUMBER="11"
 ICON_SOURCE="$PROJECT_DIR/assets/icon-l-glow.png"
 
 # 签名与公证配置
@@ -83,9 +83,12 @@ cp "$PROJECT_DIR/scripts/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 cp "$BUILD_DIR/AppIcon.icns" "$RES_DIR/AppIcon.icns"
 cp "$PROJECT_DIR/Sources/Liang/Resources/hooks/liang-bridge.sh" "$RES_DIR/hooks/liang-bridge.sh"
 chmod +x "$RES_DIR/hooks/liang-bridge.sh"
-# SPM 资源 bundle，Bundle.module 运行时需要
+# SPM 资源 bundle，Bundle.module 运行时需要。
+# 注意：SPM 生成的 Bundle.module 初始化查找 `Bundle.main.bundleURL + "Liang_Liang.bundle"`
+#（即 .app 根目录），而非 Contents/Resources。复制到 Contents/Resources 会导致 DMG 安装后
+# Bundle.module 初始化 fatalError（EXC_BREAKPOINT）崩溃——因为开发机路径（buildPath）在用户机器上不存在。
 if [ -d "$PROJECT_DIR/.build/arm64-apple-macosx/release/Liang_Liang.bundle" ]; then
-    cp -R "$PROJECT_DIR/.build/arm64-apple-macosx/release/Liang_Liang.bundle" "$RES_DIR/Liang_Liang.bundle"
+    cp -R "$PROJECT_DIR/.build/arm64-apple-macosx/release/Liang_Liang.bundle" "$APP_BUNDLE/Liang_Liang.bundle"
 fi
 
 echo "[Liang] 替换 Info.plist 中的版本号..."
