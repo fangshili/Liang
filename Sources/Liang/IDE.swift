@@ -60,7 +60,7 @@ extension IDE {
     }
 
     private static func loadIcon(_ name: String) -> NSImage? {
-        guard let url = Bundle.module.url(forResource: name, withExtension: "png"),
+        guard let url = Bundle.main.url(forResource: name, withExtension: "png"),
               let image = NSImage(contentsOf: url) else { return nil }
         image.isTemplate = true
         return image
@@ -68,7 +68,7 @@ extension IDE {
 
     /// 加载彩色图标（非 template，保留原始颜色）。
     private static func loadColoredIcon(_ name: String) -> NSImage? {
-        guard let url = Bundle.module.url(forResource: name, withExtension: "png") else { return nil }
+        guard let url = Bundle.main.url(forResource: name, withExtension: "png") else { return nil }
         return NSImage(contentsOf: url)
     }
 }

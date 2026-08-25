@@ -215,16 +215,14 @@ final class ClaudeCodeSetupManager: ObservableObject {
         let fileManager = FileManager.default
         logger.info("Starting Claude Code Hooks auto-install...")
 
-        // 尝试多个可能的资源路径（SPM 资源 bundle vs .app bundle）。
+        // 桥接脚本打包时复制到 Contents/Resources/hooks/，用 Bundle.main 查找（不依赖 SPM 的 Bundle.module）。
         let candidates: [(String, String?)] = [
-            ("claude-bridge", "Resources/hooks"),   // SPM Bundle.module
-            ("claude-bridge", "hooks"),              // .app Bundle.main (manual copy)
-            ("claude-bridge", nil),                  // fallback: root
+            ("claude-bridge", "hooks"),
+            ("claude-bridge", nil),
         ]
         var sourceURL: URL?
         for (name, subdir) in candidates {
-            if let url = Bundle.module.url(forResource: name, withExtension: "sh", subdirectory: subdir)
-                ?? Bundle.main.url(forResource: name, withExtension: "sh", subdirectory: subdir) {
+            if let url = Bundle.main.url(forResource: name, withExtension: "sh", subdirectory: subdir) {
                 sourceURL = url
                 break
             }

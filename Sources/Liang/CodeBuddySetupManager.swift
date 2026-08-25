@@ -213,16 +213,14 @@ final class CodeBuddySetupManager: ObservableObject {
         let fileManager = FileManager.default
         logger.info("Starting CodeBuddy Hooks auto-install...")
 
-        // 尝试多个可能的资源路径（SPM 资源 bundle vs .app bundle）。
+        // 桥接脚本打包时复制到 Contents/Resources/hooks/，用 Bundle.main 查找（不依赖 SPM 的 Bundle.module）。
         let candidates: [(String, String?)] = [
-            ("codebuddy-bridge", "Resources/hooks"),   // SPM Bundle.module
-            ("codebuddy-bridge", "hooks"),              // .app Bundle.main (manual copy)
-            ("codebuddy-bridge", nil),                  // fallback: root
+            ("codebuddy-bridge", "hooks"),
+            ("codebuddy-bridge", nil),
         ]
         var sourceURL: URL?
         for (name, subdir) in candidates {
-            if let url = Bundle.module.url(forResource: name, withExtension: "sh", subdirectory: subdir)
-                ?? Bundle.main.url(forResource: name, withExtension: "sh", subdirectory: subdir) {
+            if let url = Bundle.main.url(forResource: name, withExtension: "sh", subdirectory: subdir) {
                 sourceURL = url
                 break
             }

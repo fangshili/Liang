@@ -81,15 +81,16 @@ chmod +x "$EXEC_DIR/Liang"
 install_name_tool -add_rpath "@executable_path/../Frameworks" "$EXEC_DIR/Liang" || true
 cp "$PROJECT_DIR/scripts/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 cp "$BUILD_DIR/AppIcon.icns" "$RES_DIR/AppIcon.icns"
-cp "$PROJECT_DIR/Sources/Liang/Resources/hooks/liang-bridge.sh" "$RES_DIR/hooks/liang-bridge.sh"
-chmod +x "$RES_DIR/hooks/liang-bridge.sh"
-# SPM 资源 bundle，Bundle.module 运行时需要。
-# 注意：SPM 生成的 Bundle.module 初始化查找 `Bundle.main.bundleURL + "Liang_Liang.bundle"`
-#（即 .app 根目录），而非 Contents/Resources。复制到 Contents/Resources 会导致 DMG 安装后
-# Bundle.module 初始化 fatalError（EXC_BREAKPOINT）崩溃——因为开发机路径（buildPath）在用户机器上不存在。
-if [ -d "$PROJECT_DIR/.build/arm64-apple-macosx/release/Liang_Liang.bundle" ]; then
-    cp -R "$PROJECT_DIR/.build/arm64-apple-macosx/release/Liang_Liang.bundle" "$APP_BUNDLE/Liang_Liang.bundle"
-fi
+# 桥接脚本与图标直接复制到 Contents/Resources，代码用 Bundle.main 查找。
+# 不依赖 SPM 的 Bundle.module：后者在打包成 .app 时会查找 .app 根目录（而非 Contents/Resources），
+# 而根目录放 bundle 又无法通过 codesign 签名，导致 DMG 安装后 fatalError 崩溃。
+for script in liang-bridge claude-bridge codex-bridge codebuddy-bridge; do
+    cp "$PROJECT_DIR/Sources/Liang/Resources/hooks/$script.sh" "$RES_DIR/hooks/$script.sh"
+    chmod +x "$RES_DIR/hooks/$script.sh"
+done
+for icon in cursor-icon claude-icon codex-task-icon codex-onboarding-icon codebuddy-task-icon codebuddy-onboarding-icon; do
+    cp "$PROJECT_DIR/Sources/Liang/Resources/Icons/$icon.png" "$RES_DIR/$icon.png"
+done
 
 echo "[Liang] 替换 Info.plist 中的版本号..."
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP_BUNDLE/Contents/Info.plist"

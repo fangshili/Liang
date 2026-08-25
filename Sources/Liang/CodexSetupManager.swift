@@ -218,15 +218,14 @@ final class CodexSetupManager: ObservableObject {
         let fileManager = FileManager.default
         logger.info("Starting Codex Hooks auto-install...")
 
+        // 桥接脚本打包时复制到 Contents/Resources/hooks/，用 Bundle.main 查找（不依赖 SPM 的 Bundle.module）。
         let candidates: [(String, String?)] = [
-            ("codex-bridge", "Resources/hooks"),
             ("codex-bridge", "hooks"),
             ("codex-bridge", nil),
         ]
         var sourceURL: URL?
         for (name, subdir) in candidates {
-            if let url = Bundle.module.url(forResource: name, withExtension: "sh", subdirectory: subdir)
-                ?? Bundle.main.url(forResource: name, withExtension: "sh", subdirectory: subdir) {
+            if let url = Bundle.main.url(forResource: name, withExtension: "sh", subdirectory: subdir) {
                 sourceURL = url
                 break
             }
