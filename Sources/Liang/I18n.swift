@@ -361,6 +361,7 @@ enum LocalizedKey: String {
     case codexSetupInvalidHooksJson = "~/.codex/hooks.json format is invalid"
     case codexLimitNote = "Codex cannot distinguish task success from failure, so finished tasks always show as success."
     case codexSupportedClients = "Supported clients: Codex CLI and the ChatGPT desktop app (Codex mode). Cloud sessions are not supported."
+    case codexHookTrustNote = "After setup, run /hooks in the Codex CLI to trust the hooks. The ChatGPT desktop app cannot trust hooks, so they won't run there."
     case onboardingCodexCardDesc = "Codex hooks cover session, tool, and subagent states. Supports Codex CLI and the ChatGPT desktop app. Tasks always end green."
     case onboardingCodexNotInstalledTitle = "Codex Not Installed"
     case onboardingCodexNotInstalledMessage = "Liang requires the Codex CLI to receive agent events. Please install Codex first, then configure it here."
@@ -703,6 +704,7 @@ private enum ChineseTranslations {
         .codexSetupInvalidHooksJson: "~/.codex/hooks.json 内容格式不正确",
         .codexLimitNote: "Codex 无法区分任务成功与失败，任务结束始终显示为成功。",
         .codexSupportedClients: "支持的客户端：Codex CLI 与 ChatGPT 桌面版（Codex 模式）。云端会话不支持。",
+        .codexHookTrustNote: "配置完成后需在 Codex CLI（终端）中运行 /hooks 信任，ChatGPT 桌面版无法信任 hook，否则收不到状态。",
         .onboardingCodexCardDesc: "Codex 的 Hook 覆盖会话、工具与子代理状态。支持 Codex CLI 与 ChatGPT 桌面版。任务结束恒为绿色。",
         .onboardingCodexNotInstalledTitle: "未检测到 Codex",
         .onboardingCodexNotInstalledMessage: "Liang 需要 Codex CLI 才能接收 Agent 事件。请先安装 Codex，然后再回来配置。",

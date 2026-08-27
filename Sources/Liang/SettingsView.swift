@@ -726,6 +726,17 @@ private struct CodexPage: View {
                 Spacer()
             }
 
+            // hook 信任需在 CLI 完成，桌面版不支持
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: "exclamationmark.triangle")
+                    .foregroundColor(.orange)
+                Text(I18n.shared.string(.codexHookTrustNote))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+
             VStack(alignment: .leading, spacing: 10) {
                 Text(I18n.shared.string(.operations))
                     .font(.system(size: 13, weight: .medium))

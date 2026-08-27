@@ -20,10 +20,10 @@ Liang 通过各 IDE 的官方 Hooks 机制感知状态，不注入、不改动�
 |---|---|---|---|---|
 | **Cursor** | Cursor Hooks（`~/.cursor/hooks.json`） | ✅ | ✅ | 最完整，无重大限制 |
 | **Claude Code** | Claude Code Hooks（`~/.claude/settings.json`） | ✅ | ✅ | `prompt_id` 字段需 Claude Code ≥ v2.1.196 |
-| **Codex** | Codex Hooks（`~/.codex/hooks.json`） | ✅ | ❌ 恒 success | 无法区分任务成功/失败；`SessionEnd` 在空闲约 30 分钟后才触发 |
+| **Codex** | Codex Hooks（`~/.codex/hooks.json`） | ✅ | ❌ 恒 success | 无法区分任务成功/失败；`SessionEnd` 空闲约 30 分钟后才触发；**需 CLI `/hooks` 信任**（桌面版无法信任） |
 | **CodeBuddy** | CodeBuddy Hooks（`~/.codebuddy/settings.json`） | ⚠️ 仅 CLI | ❌ 恒 success | 桌面版仅支持 7 种事件，无法感知权限确认/深度思考 |
 
-> 说明：Codex 与 CodeBuddy 的任务结束事件（`Stop`）不含成功/失败状态字段，故统一显示为「成功」；CodeBuddy 桌面版仅支持 7 种 Hooks 事件（不含 `PermissionRequest` / `Notification`），因此权限确认与「深度思考」状态在桌面版无法感知。以上均为对应 IDE Hooks 规范的限制，非 Liang 缺陷。
+> 说明：Codex 与 CodeBuddy 的任务结束事件（`Stop`）不含成功/失败状态字段，故统一显示为「成功」；CodeBuddy 桌面版仅支持 7 种 Hooks 事件（不含 `PermissionRequest` / `Notification`），因此权限确认与「深度思考」状态在桌面版无法感知；Codex 的 hook 需在 CLI 运行 `/hooks` 信任后才执行（桌面版无法信任）。以上均为对应 IDE Hooks 规范的限制，非 Liang 缺陷。
 
 ## 安装
 

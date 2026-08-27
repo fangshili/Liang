@@ -5,3 +5,16 @@ build/
 *.xcodeproj
 *.xcworkspace
 .swiftpm/
+
+# 设计文档 / 开发记录（不发布）
+Agent.md
+docs/
+test.txt
+ref.html
+
+# 图标设计素材（仅保留构建必需的 assets/icon-l-glow.png）
+assets/icon-design-philosophy.md
+assets/icon-l-orb.png
+assets/icon-l-rays.png
+assets/icon-preview-l.html
+assets/icon-previews/
