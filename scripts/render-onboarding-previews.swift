@@ -184,9 +184,15 @@ func saveGIF(_ frames: [CGImage], path: String, delay: Double) {
         UTType.gif.identifier as CFString,
         frames.count, nil
     ) else { return }
-    let props = [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFDelayTime: delay]] as CFDictionary
+
+    // 无限循环（0 = loop forever）
+    CGImageDestinationSetProperties(dest, [
+        kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFLoopCount: 0]
+    ] as CFDictionary)
+
+    let frameProps = [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFDelayTime: delay]] as CFDictionary
     for frame in frames {
-        CGImageDestinationAddImage(dest, frame, props)
+        CGImageDestinationAddImage(dest, frame, frameProps)
     }
     CGImageDestinationFinalize(dest)
     print("Saved \(path)")
