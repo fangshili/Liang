@@ -1177,7 +1177,7 @@ private struct AboutPage: View {
                 Text(I18n.shared.string(.appName))
                     .font(.system(size: 13, weight: .medium))
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(I18n.shared.string(.versionFormat, "0.1.10"))
+                    Text(I18n.shared.string(.versionFormat, "0.1.11"))
                         .font(.system(size: 13))
                     Text(I18n.shared.string(.aboutTitle))
                         .font(.caption)
