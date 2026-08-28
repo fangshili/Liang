@@ -10,7 +10,7 @@
             <sparkle:shortVersionString>0.1.11</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/fangshili/Liang/releases/download/v0.1.11/Liang-0.1.11.dmg" length="3106254" type="application/octet-stream"/>
+            <enclosure url="https://github.com/fangshili/Liang/releases/download/v0.1.11/Liang-0.1.11.dmg" length="3106251" type="application/octet-stream"/>
         </item>
         <item>
             <title>0.1.10</title>
