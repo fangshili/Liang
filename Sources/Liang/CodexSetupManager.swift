@@ -21,6 +21,7 @@ enum CodexSetupStatus: Equatable {
 enum CodexSetupError: LocalizedError {
     case bridgeScriptNotFoundInBundle
     case writeFailed(Error)
+    case configParseFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -28,6 +29,8 @@ enum CodexSetupError: LocalizedError {
             return I18n.shared.string(.cursorSetupResourceMissing)
         case .writeFailed(let error):
             return I18n.shared.string(.cursorSetupWriteFailed, error.localizedDescription)
+        case .configParseFailed(let path):
+            return I18n.shared.string(.configParseFailed, path)
         }
     }
 }
@@ -218,16 +221,21 @@ final class CodexSetupManager: ObservableObject {
         let fileManager = FileManager.default
         logger.info("Starting Codex Hooks auto-install...")
 
-        // 桥接脚本打包时复制到 Contents/Resources/hooks/，用 Bundle.main 查找（不依赖 SPM 的 Bundle.module）。
-        let candidates: [(String, String?)] = [
-            ("codex-bridge", "hooks"),
-            ("codex-bridge", nil),
-        ]
+        // 桥接脚本查找：先 .app bundle（DMG 打包），再 SPM 资源 bundle（本地 debug）。
+        // 必须先查 Bundle.main——DMG 未附带 Liang_Liang.bundle 时，访问 Bundle.module 会 fatalError。
         var sourceURL: URL?
-        for (name, subdir) in candidates {
-            if let url = Bundle.main.url(forResource: name, withExtension: "sh", subdirectory: subdir) {
+        for subdir in ["hooks", nil] {
+            if let url = Bundle.main.url(forResource: "codex-bridge", withExtension: "sh", subdirectory: subdir) {
                 sourceURL = url
                 break
+            }
+        }
+        if sourceURL == nil {
+            for subdir in ["Resources/hooks", "hooks", nil] {
+                if let url = Bundle.module.url(forResource: "codex-bridge", withExtension: "sh", subdirectory: subdir) {
+                    sourceURL = url
+                    break
+                }
             }
         }
         guard let sourceURL else {
@@ -246,8 +254,10 @@ final class CodexSetupManager: ObservableObject {
 
         // H2 教训：读取现有 hooks.json 并合并，只改 hooks 字段，保留其他字段。
         var existingConfig: [String: Any] = [:]
-        if let existingData = fileManager.contents(atPath: hooksJSONURL.path),
-           let json = try? JSONSerialization.jsonObject(with: existingData) as? [String: Any] {
+        if let existingData = fileManager.contents(atPath: hooksJSONURL.path) {
+            guard let json = try? JSONSerialization.jsonObject(with: existingData) as? [String: Any] else {
+                throw CodexSetupError.configParseFailed(hooksJSONURL.path)
+            }
             existingConfig = json
         }
 

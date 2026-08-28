@@ -21,6 +21,7 @@ enum ClaudeCodeSetupStatus: Equatable {
 enum ClaudeCodeSetupError: LocalizedError {
     case bridgeScriptNotFoundInBundle
     case writeFailed(Error)
+    case configParseFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -28,6 +29,8 @@ enum ClaudeCodeSetupError: LocalizedError {
             return I18n.shared.string(.cursorSetupResourceMissing)
         case .writeFailed(let error):
             return I18n.shared.string(.cursorSetupWriteFailed, error.localizedDescription)
+        case .configParseFailed(let path):
+            return I18n.shared.string(.configParseFailed, path)
         }
     }
 }
@@ -215,16 +218,21 @@ final class ClaudeCodeSetupManager: ObservableObject {
         let fileManager = FileManager.default
         logger.info("Starting Claude Code Hooks auto-install...")
 
-        // 桥接脚本打包时复制到 Contents/Resources/hooks/，用 Bundle.main 查找（不依赖 SPM 的 Bundle.module）。
-        let candidates: [(String, String?)] = [
-            ("claude-bridge", "hooks"),
-            ("claude-bridge", nil),
-        ]
+        // 桥接脚本查找：先 .app bundle（DMG 打包），再 SPM 资源 bundle（本地 debug）。
+        // 必须先查 Bundle.main——DMG 未附带 Liang_Liang.bundle 时，访问 Bundle.module 会 fatalError。
         var sourceURL: URL?
-        for (name, subdir) in candidates {
-            if let url = Bundle.main.url(forResource: name, withExtension: "sh", subdirectory: subdir) {
+        for subdir in ["hooks", nil] {
+            if let url = Bundle.main.url(forResource: "claude-bridge", withExtension: "sh", subdirectory: subdir) {
                 sourceURL = url
                 break
+            }
+        }
+        if sourceURL == nil {
+            for subdir in ["Resources/hooks", "hooks", nil] {
+                if let url = Bundle.module.url(forResource: "claude-bridge", withExtension: "sh", subdirectory: subdir) {
+                    sourceURL = url
+                    break
+                }
             }
         }
         guard let sourceURL else {
@@ -244,8 +252,10 @@ final class ClaudeCodeSetupManager: ObservableObject {
         // H2 教训：读取现有 settings.json 并合并，只改 hooks 字段，
         // 保留 permissions / model / env / statusLine 等用户既有配置。
         var existingConfig: [String: Any] = [:]
-        if let existingData = fileManager.contents(atPath: settingsJSONURL.path),
-           let json = try? JSONSerialization.jsonObject(with: existingData) as? [String: Any] {
+        if let existingData = fileManager.contents(atPath: settingsJSONURL.path) {
+            guard let json = try? JSONSerialization.jsonObject(with: existingData) as? [String: Any] else {
+                throw ClaudeCodeSetupError.configParseFailed(settingsJSONURL.path)
+            }
             existingConfig = json
         }
 

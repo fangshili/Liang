@@ -60,15 +60,28 @@ extension IDE {
     }
 
     private static func loadIcon(_ name: String) -> NSImage? {
-        guard let url = Bundle.main.url(forResource: name, withExtension: "png"),
-              let image = NSImage(contentsOf: url) else { return nil }
-        image.isTemplate = true
-        return image
+        // 本地 debug（SPM）资源在 Bundle.module，打包后（DMG）在 Bundle.main，两者都尝试。
+        if let image = loadImage(name) {
+            image.isTemplate = true
+            return image
+        }
+        return nil
     }
 
     /// 加载彩色图标（非 template，保留原始颜色）。
     private static func loadColoredIcon(_ name: String) -> NSImage? {
-        guard let url = Bundle.main.url(forResource: name, withExtension: "png") else { return nil }
-        return NSImage(contentsOf: url)
+        return loadImage(name)
+    }
+
+    private static func loadImage(_ name: String) -> NSImage? {
+        if let url = Bundle.main.url(forResource: name, withExtension: "png"),
+           let image = NSImage(contentsOf: url) {
+            return image
+        }
+        if let url = Bundle.module.url(forResource: name, withExtension: "png"),
+           let image = NSImage(contentsOf: url) {
+            return image
+        }
+        return nil
     }
 }

@@ -34,9 +34,12 @@ final class GlowSettings: ObservableObject, Codable {
     @Published var successMaxDuration: Double = 20
     @Published var waitingTimeoutEnabled: Bool = false
     @Published var deduplicationWindow: Double = 1.0
+    @Published var errorAutoClearOnNewTask: Bool = false
 
     /// 刘海展开面板开关。
     @Published var notchExpansionEnabled: Bool = true
+    /// 非刘海机型：是否隐藏假刘海（隐藏后无法触发任务详情）。
+    @Published var hideFakeNotch: Bool = false
 
     /// 光标跟随光晕开关与外观。
     @Published var cursorGlowEnabled: Bool = true
@@ -76,8 +79,8 @@ final class GlowSettings: ObservableObject, Codable {
         case notchInset, horizontalOffset, cornerRadiusScale
         case breathingEnabled, breathingSpeed
         case stateColors, stateGlowEnabled
-        case processingTimeout, successMaxDuration, waitingTimeoutEnabled, deduplicationWindow
-        case notchExpansionEnabled, cursorGlowEnabled, cursorLabelEnabled, cursorGlowSize, cursorGlowOffsetX, cursorGlowOffsetY
+        case processingTimeout, successMaxDuration, waitingTimeoutEnabled, deduplicationWindow, errorAutoClearOnNewTask
+        case notchExpansionEnabled, hideFakeNotch, cursorGlowEnabled, cursorLabelEnabled, cursorGlowSize, cursorGlowOffsetX, cursorGlowOffsetY
         case ideEnabled
         case hasCompletedCursorSetup
         case hasCompletedClaudeSetup
@@ -131,8 +134,10 @@ final class GlowSettings: ObservableObject, Codable {
         successMaxDuration = try container.decodeIfPresent(Double.self, forKey: .successMaxDuration) ?? 20
         waitingTimeoutEnabled = try container.decodeIfPresent(Bool.self, forKey: .waitingTimeoutEnabled) ?? false
         deduplicationWindow = try container.decodeIfPresent(Double.self, forKey: .deduplicationWindow) ?? 1.0
+        errorAutoClearOnNewTask = try container.decodeIfPresent(Bool.self, forKey: .errorAutoClearOnNewTask) ?? false
 
         notchExpansionEnabled = try container.decodeIfPresent(Bool.self, forKey: .notchExpansionEnabled) ?? true
+        hideFakeNotch = try container.decodeIfPresent(Bool.self, forKey: .hideFakeNotch) ?? false
         cursorGlowEnabled = try container.decodeIfPresent(Bool.self, forKey: .cursorGlowEnabled) ?? true
         cursorLabelEnabled = try container.decodeIfPresent(Bool.self, forKey: .cursorLabelEnabled) ?? true
         cursorGlowSize = try container.decodeIfPresent(Double.self, forKey: .cursorGlowSize) ?? 23
@@ -189,8 +194,10 @@ final class GlowSettings: ObservableObject, Codable {
         try container.encode(successMaxDuration, forKey: .successMaxDuration)
         try container.encode(waitingTimeoutEnabled, forKey: .waitingTimeoutEnabled)
         try container.encode(deduplicationWindow, forKey: .deduplicationWindow)
+        try container.encode(errorAutoClearOnNewTask, forKey: .errorAutoClearOnNewTask)
 
         try container.encode(notchExpansionEnabled, forKey: .notchExpansionEnabled)
+        try container.encode(hideFakeNotch, forKey: .hideFakeNotch)
         try container.encode(cursorGlowEnabled, forKey: .cursorGlowEnabled)
         try container.encode(cursorLabelEnabled, forKey: .cursorLabelEnabled)
         try container.encode(cursorGlowSize, forKey: .cursorGlowSize)
@@ -238,7 +245,9 @@ final class GlowSettings: ObservableObject, Codable {
         successMaxDuration = defaults.successMaxDuration
         waitingTimeoutEnabled = defaults.waitingTimeoutEnabled
         deduplicationWindow = defaults.deduplicationWindow
+        errorAutoClearOnNewTask = defaults.errorAutoClearOnNewTask
         notchExpansionEnabled = defaults.notchExpansionEnabled
+        hideFakeNotch = defaults.hideFakeNotch
         cursorGlowEnabled = defaults.cursorGlowEnabled
         cursorLabelEnabled = defaults.cursorLabelEnabled
         cursorGlowSize = defaults.cursorGlowSize
@@ -256,6 +265,7 @@ final class GlowSettings: ObservableObject, Codable {
         let defaults = GlowSettings(defaults: true)
         brightness = defaults.brightness
         blurRadius = defaults.blurRadius
+        hideFakeNotch = defaults.hideFakeNotch
     }
 
     func restoreNotchDefaults() {
@@ -312,7 +322,9 @@ final class GlowSettings: ObservableObject, Codable {
             successMaxDuration = loaded.successMaxDuration
             waitingTimeoutEnabled = loaded.waitingTimeoutEnabled
             deduplicationWindow = loaded.deduplicationWindow
+            errorAutoClearOnNewTask = loaded.errorAutoClearOnNewTask
             notchExpansionEnabled = loaded.notchExpansionEnabled
+            hideFakeNotch = loaded.hideFakeNotch
             cursorGlowEnabled = loaded.cursorGlowEnabled
             cursorLabelEnabled = loaded.cursorLabelEnabled
             cursorGlowSize = loaded.cursorGlowSize

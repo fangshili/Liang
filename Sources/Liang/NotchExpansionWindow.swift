@@ -44,6 +44,7 @@ final class NotchExpansionWindow: NSWindow {
 
         shapeLayer.fillColor = NSColor.black.cgColor
         shapeLayer.actions = ["path": NSNull()] // 禁用隐式动画，由显式动画控制
+        shapeLayer.anchorPoint = CGPoint(x: 0.5, y: 1.0) // 顶部中央为缩放原点
         container.layer?.addSublayer(shapeLayer)
 
         setupContentContainer(in: container)
@@ -141,7 +142,8 @@ final class NotchExpansionWindow: NSWindow {
         )
         setFrame(windowFrame, display: true)
 
-        shapeLayer.frame = CGRect(origin: .zero, size: windowFrame.size)
+        shapeLayer.bounds = CGRect(origin: .zero, size: windowFrame.size)
+        shapeLayer.position = CGPoint(x: windowFrame.width / 2, y: windowFrame.height)
         anchorHeight = anchor.height
 
         // 内容容器占据展开区域（窗口底部到刘海下沿）。
@@ -159,35 +161,37 @@ final class NotchExpansionWindow: NSWindow {
             height: emptySize.height
         )
 
-        // 底部圆角：折叠时与刘海底部圆角一致（≤12），展开时线性放大到 2 倍（≤24）。
+        // 方案 2：面板形状固定为展开态（圆角保留），用 transform 缩放替代 path 形变。
         let notchHeight = DeviceCapability.notchMetrics?.height ?? anchor.height
         let compactRadius = min(notchHeight * CGFloat(cornerRadiusScale), 12)
         let expandedRadius = min(compactRadius * 2, 24)
-        let bottomRadius = isExpanded ? expandedRadius : compactRadius
-        let newPath = shapePath(
+        shapeLayer.path = shapePath(
             in: shapeLayer.bounds,
-            topWidth: anchor.width,
+            topWidth: expandedWidth,
             notchHeight: notchHeight,
-            isExpanded: isExpanded,
-            bottomCornerRadius: bottomRadius
+            isExpanded: true,
+            bottomCornerRadius: expandedRadius
         )
 
-        if animated, let oldPath = shapeLayer.path {
-            let animation = CABasicAnimation(keyPath: "path")
-            animation.fromValue = oldPath
-            animation.toValue = newPath
-            animation.duration = 0.4
-            animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            animation.fillMode = .forwards
-            animation.isRemovedOnCompletion = false
-            shapeLayer.add(animation, forKey: "path")
+        // 折叠时缩放到锚点（假刘海/真实刘海）大小，展开回到原始尺寸；anchorPoint 已设为顶部中央。
+        let scaleX = anchor.width / expandedWidth
+        let scaleY = anchor.height / windowFrame.height
+        let target = isExpanded ? CATransform3DIdentity : CATransform3DMakeScale(scaleX, scaleY, 1)
+
+        if animated {
+            CATransaction.begin()
+            CATransaction.setAnimationDuration(0.4)
+            CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeInEaseOut))
         }
-        shapeLayer.path = newPath
+        shapeLayer.transform = target
+        if animated {
+            CATransaction.commit()
+        }
 
         // 展开时允许鼠标交互（滚动列表），收起时穿透鼠标。
         ignoresMouseEvents = !isExpanded
 
-        // 内容淡入淡出：展开时等形状动画展开到一半再淡入；收起时立即隐藏。
+        // 内容淡入淡出：展开时等缩放进行到一半再淡入；收起时立即隐藏。
         contentShowWorkItem?.cancel()
         contentShowWorkItem = nil
         if isExpanded {
@@ -200,7 +204,7 @@ final class NotchExpansionWindow: NSWindow {
                 }
             }
             contentShowWorkItem = workItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: workItem)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18, execute: workItem)
         } else {
             contentContainer.alphaValue = 0
         }

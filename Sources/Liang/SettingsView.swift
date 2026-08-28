@@ -199,6 +199,16 @@ private struct GlowPage: View {
                 sliderRow(I18n.shared.string(.brightness), value: $settings.brightness, range: 0.1...1, step: 0.05)
                 sliderRow(I18n.shared.string(.blurRadius), value: $settings.blurRadius, range: 0...40, step: 0.5)
 
+                if !DeviceCapability.hasNotchedScreen {
+                    HStack(spacing: 4) {
+                        Toggle(I18n.shared.string(.hideFakeNotch), isOn: $settings.hideFakeNotch)
+                        Image(systemName: "questionmark.circle")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                            .help(I18n.shared.string(.hideFakeNotchHelp))
+                    }
+                }
+
                 HStack {
                     Spacer()
                     Button(I18n.shared.string(.restoreDefaults)) {
@@ -267,6 +277,9 @@ private struct GlowPage: View {
             VStack(alignment: .leading, spacing: 14) {
                 Toggle(I18n.shared.string(.enableCursorGlow), isOn: $settings.cursorGlowEnabled)
                     .help(I18n.shared.string(.cursorGlowHelp))
+
+                Toggle(I18n.shared.string(.showCursorLabel), isOn: $settings.cursorLabelEnabled)
+                    .disabled(!settings.cursorGlowEnabled)
 
                 VStack(alignment: .leading, spacing: 14) {
                     sliderRow(I18n.shared.string(.cursorSize), value: $settings.cursorGlowSize, range: 12...64, step: 1)
@@ -1077,6 +1090,13 @@ private struct AdvancedPage: View {
                             .font(.system(size: 11))
                             .foregroundColor(.secondary)
                             .help(I18n.shared.string(.waitingTimeoutHelp))
+                    }
+                    HStack(spacing: 4) {
+                        Toggle(I18n.shared.string(.errorAutoClearOnNewTask), isOn: $settings.errorAutoClearOnNewTask)
+                        Image(systemName: "questionmark.circle")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                            .help(I18n.shared.string(.errorAutoClearHelp))
                     }
                 }
             }

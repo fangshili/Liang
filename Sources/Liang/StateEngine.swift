@@ -35,6 +35,8 @@ final class StateEngine: ObservableObject {
     var successMaxDuration: TimeInterval
     /// 最近事件去重窗口。
     var deduplicationWindow: TimeInterval
+    /// error 状态是否在新 processing 事件到来时自动清除。
+    var errorAutoClearOnNewTask: Bool
     /// 长时间无 Cursor 事件后自动回到 idle（默认 5 分钟）。
     var sessionIdleTimeout: TimeInterval = 300
 
@@ -48,6 +50,7 @@ final class StateEngine: ObservableObject {
         self.successMaxDuration = defaults.successMaxDuration
         self.waitingTimeoutEnabled = defaults.waitingTimeoutEnabled
         self.deduplicationWindow = defaults.deduplicationWindow
+        self.errorAutoClearOnNewTask = defaults.errorAutoClearOnNewTask
     }
 
     func start() {
@@ -170,6 +173,12 @@ final class StateEngine: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] value in self?.deduplicationWindow = value }
             .store(in: &cancellables)
+
+        settings.$errorAutoClearOnNewTask
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] value in self?.errorAutoClearOnNewTask = value }
+            .store(in: &cancellables)
     }
 
     /// 手动清除错误状态（用户通过菜单栏操作）。
@@ -194,8 +203,8 @@ final class StateEngine: ObservableObject {
         // 2. waiting 保持到用户发送新消息（beforeSubmitPrompt）或 sessionEnd/idle；
         //    默认不超时，等待用户主动输入。
         // 3. success 保持最多 3 分钟，或被新事件打断。
-        if state == .error && newState == .processing {
-            // 保持 error，不处理新 processing。
+        if state == .error && newState == .processing && !errorAutoClearOnNewTask {
+            // 保持 error，不处理新 processing（除非用户开启「新任务自动清除错误」）。
             return
         }
 

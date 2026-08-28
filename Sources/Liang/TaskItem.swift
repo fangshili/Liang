@@ -63,7 +63,10 @@ struct TaskItem: Identifiable, Equatable {
     }
 
     private static func localizedToolName(_ name: String) -> String {
+        // 小写归一化，兼容 Cursor（snake_case）与 Claude Code / Codex / CodeBuddy（PascalCase）。
+        let normalized = name.lowercased()
         let map: [String: LocalizedKey] = [
+            // Cursor（snake_case）
             "read_file": .toolReadFile,
             "write_to_file": .toolWriteFile,
             "replace_in_file": .toolEditFile,
@@ -73,8 +76,23 @@ struct TaskItem: Identifiable, Equatable {
             "web_search": .toolWebSearch,
             "web_fetch": .toolWebFetch,
             "ask_followup_question": .toolAskUser,
-            "mcp_call_tool": .toolCallTool
+            "mcp_call_tool": .toolCallTool,
+            // Claude Code / Codex / CodeBuddy（PascalCase）
+            "read": .toolReadFile,
+            "write": .toolWriteFile,
+            "edit": .toolEditFile,
+            "bash": .toolExecuteCommand,
+            "glob": .toolSearchFile,
+            "grep": .toolSearchContent,
+            "webfetch": .toolWebFetch,
+            "websearch": .toolWebSearch,
+            "task": .toolCallTool,
+            "todowrite": .toolWriteFile,
+            "notebookedit": .toolEditFile,
+            "slashcommand": .toolCallTool,
+            "enterplanmode": .taskThinking,
+            "exitplanmode": .taskThinking,
         ]
-        return map[name].map { I18n.shared.string($0) } ?? name
+        return map[normalized].map { I18n.shared.string($0) } ?? name
     }
 }

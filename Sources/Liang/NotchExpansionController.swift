@@ -20,6 +20,13 @@ final class NotchExpansionController {
     private let expandedHeight: CGFloat = 200
     private let expandedExtraWidth: CGFloat = 240 // 展开后左右各放宽 120pt，紧凑但够容纳任务标题
 
+    /// 是否应显示展开面板：开关开启，且（有刘海 或 非刘海未隐藏假刘海）。
+    private var shouldShowExpansion: Bool {
+        guard settings.notchExpansionEnabled else { return false }
+        if !DeviceCapability.hasNotchedScreen && settings.hideFakeNotch { return false }
+        return true
+    }
+
     private init() {}
 
     func start() {
@@ -46,14 +53,13 @@ final class NotchExpansionController {
         settings.$notchExpansionEnabled
             .dropFirst()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] enabled in
-                if enabled {
-                    self?.show()
-                } else {
-                    self?.window.orderOut(nil)
-                    self?.stopMouseTimer()
-                }
-            }
+            .sink { [weak self] _ in self?.applyVisibility() }
+            .store(in: &cancellables)
+
+        settings.$hideFakeNotch
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.applyVisibility() }
             .store(in: &cancellables)
 
         settings.$cornerRadiusScale
@@ -62,13 +68,13 @@ final class NotchExpansionController {
             .sink { [weak self] _ in self?.apply(animated: false) }
             .store(in: &cancellables)
 
-        if settings.notchExpansionEnabled {
+        if shouldShowExpansion {
             show()
         }
     }
 
     @objc private func update() {
-        guard settings.notchExpansionEnabled, !isAsleep else {
+        guard shouldShowExpansion, !isAsleep else {
             window.orderOut(nil)
             stopMouseTimer()
             return
@@ -79,11 +85,20 @@ final class NotchExpansionController {
     }
 
     private func show() {
-        guard settings.notchExpansionEnabled, !isAsleep else { return }
+        guard shouldShowExpansion, !isAsleep else { return }
         updateAnchor()
         apply(animated: false)
         window.orderFront(nil)
         startMouseTimer()
+    }
+
+    private func applyVisibility() {
+        if shouldShowExpansion {
+            show()
+        } else {
+            window.orderOut(nil)
+            stopMouseTimer()
+        }
     }
 
     private func updateAnchor() {
@@ -132,7 +147,7 @@ final class NotchExpansionController {
     }
 
     private func checkHover() {
-        guard settings.notchExpansionEnabled, !isAsleep, let anchor = currentAnchor else { return }
+        guard shouldShowExpansion, !isAsleep, let anchor = currentAnchor else { return }
         let mouse = NSEvent.mouseLocation
         let hotRect = isExpanded ? expandedRect(for: anchor) : anchor
         let shouldExpand = hotRect.contains(mouse)
@@ -181,7 +196,7 @@ final class NotchExpansionController {
     @objc private func systemDidWake() {
         logger.info("Notch expansion restoring after wake")
         isAsleep = false
-        if settings.notchExpansionEnabled {
+        if shouldShowExpansion {
             show()
         }
     }

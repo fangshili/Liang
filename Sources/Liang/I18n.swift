@@ -161,6 +161,8 @@ enum LocalizedKey: String {
     case menuBarStateColorHelp = "Show a white static glow orb when disabled"
     case notchSize = "Notch Size"
     case noNotchDetected = "No notch detected"
+    case hideFakeNotch = "Hide Notch"
+    case hideFakeNotchHelp = "When hidden, task details cannot be triggered."
     case widthPt = "Width: %.0f pt"
     case heightPt = "Height: %.0f pt"
     case breathingSpeed = "Breathing Speed"
@@ -191,6 +193,8 @@ enum LocalizedKey: String {
     case successDurationHelp = "The maximum time the success glow is kept before automatically returning to idle."
     case deduplicationWindowHelp = "Events of the same type or within the same conversation that arrive within this window are treated as a single event to prevent flickering."
     case deduplicationWindow = "Deduplication Window"
+    case errorAutoClearOnNewTask = "Auto-clear error on new task"
+    case errorAutoClearHelp = "When on, a new processing event replaces the error state automatically. When off, the error persists until manually cleared or the session ends."
     case diagnostics = "Diagnostics"
     case diagnosticsDescription = "Export current configuration as text for troubleshooting."
     case copyConfigToClipboard = "Copy Configuration to Clipboard"
@@ -284,6 +288,7 @@ enum LocalizedKey: String {
     case cursorSetupScriptNotExecutable = "Bridge script is not executable"
     case cursorSetupResourceMissing = "Bridge script not found in app bundle. Try manual installation."
     case cursorSetupWriteFailed = "Write failed: %@"
+    case configParseFailed = "Unable to parse %@: it may contain comments (// or /* */) or use a non-standard JSON format. To avoid overwriting your existing configuration, Liang aborted the auto-install. Please remove comments and retry, or use manual install."
 
     // MARK: - Onboarding V2
     case onboardingConnectorTitle = "Onboarding · Connector Title"
@@ -521,6 +526,8 @@ private enum ChineseTranslations {
         .menuBarStateColorHelp: "关闭后菜单栏图标显示为白色静态光晕小球",
         .notchSize: "刘海尺寸",
         .noNotchDetected: "未检测到刘海",
+        .hideFakeNotch: "隐藏刘海",
+        .hideFakeNotchHelp: "隐藏后将无法触发显示任务详情",
         .widthPt: "宽度：%.0f pt",
         .heightPt: "高度：%.0f pt",
         .breathingSpeed: "呼吸速度",
@@ -548,6 +555,8 @@ private enum ChineseTranslations {
         .processingTimeoutHelp: "processing 状态下超过该时长没有新事件时，光晕自动回到 idle。",
         .successDurationHelp: "success 状态最多保持该时长，之后自动回到 idle。",
         .deduplicationWindowHelp: "相同类型或同一会话的事件在该时间窗口内到达时，会被合并为一次事件，避免光晕频繁闪烁。",
+        .errorAutoClearOnNewTask: "新任务自动清除错误状态",
+        .errorAutoClearHelp: "开启后，新的处理中事件会自动替换错误状态；关闭时错误状态保持到你手动清除或会话结束。",
         .deduplicationWindow: "去重窗口",
         .diagnosticsDescription: "将当前所有配置以文本形式导出，便于排查问题。",
         .diagnostics: "诊断",
@@ -639,6 +648,7 @@ private enum ChineseTranslations {
         .cursorSetupScriptNotExecutable: "桥接脚本没有可执行权限",
         .cursorSetupResourceMissing: "应用内未找到桥接脚本，请尝试手动安装。",
         .cursorSetupWriteFailed: "写入失败：%@",
+        .configParseFailed: "无法解析现有配置 %@：文件可能包含注释（// 或 /* */）或使用了非标准 JSON 格式。为避免覆盖你现有的配置，Liang 已中止自动安装。请移除注释后重试，或改用「手动安装」。",
         // Onboarding V2
         .onboardingConnectorTitle: "接入 Coding Agent",
         .onboardingConnectorSubtitle: "Liang 需要监听 Agent 的实时事件来驱动光晕。先完成 Cursor 配置即可启用全部效果。",

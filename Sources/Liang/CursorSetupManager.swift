@@ -21,6 +21,7 @@ enum CursorSetupStatus: Equatable {
 enum CursorSetupError: LocalizedError {
     case bridgeScriptNotFoundInBundle
     case writeFailed(Error)
+    case configParseFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -28,6 +29,8 @@ enum CursorSetupError: LocalizedError {
             return I18n.shared.string(.cursorSetupResourceMissing)
         case .writeFailed(let error):
             return I18n.shared.string(.cursorSetupWriteFailed, error.localizedDescription)
+        case .configParseFailed(let path):
+            return I18n.shared.string(.configParseFailed, path)
         }
     }
 }
@@ -199,16 +202,21 @@ final class CursorSetupManager: ObservableObject {
         let fileManager = FileManager.default
         logger.info("Starting Cursor Hooks auto-install...")
 
-        // 桥接脚本打包时复制到 Contents/Resources/hooks/，用 Bundle.main 查找（不依赖 SPM 的 Bundle.module）。
-        let candidates: [(String, String?)] = [
-            ("liang-bridge", "hooks"),
-            ("liang-bridge", nil),
-        ]
+        // 桥接脚本查找：先 .app bundle（DMG 打包），再 SPM 资源 bundle（本地 debug）。
+        // 必须先查 Bundle.main——DMG 未附带 Liang_Liang.bundle 时，访问 Bundle.module 会 fatalError。
         var sourceURL: URL?
-        for (name, subdir) in candidates {
-            if let url = Bundle.main.url(forResource: name, withExtension: "sh", subdirectory: subdir) {
+        for subdir in ["hooks", nil] {
+            if let url = Bundle.main.url(forResource: "liang-bridge", withExtension: "sh", subdirectory: subdir) {
                 sourceURL = url
                 break
+            }
+        }
+        if sourceURL == nil {
+            for subdir in ["Resources/hooks", "hooks", nil] {
+                if let url = Bundle.module.url(forResource: "liang-bridge", withExtension: "sh", subdirectory: subdir) {
+                    sourceURL = url
+                    break
+                }
             }
         }
         guard let sourceURL else {
@@ -239,8 +247,10 @@ final class CursorSetupManager: ObservableObject {
         // 保留用户已有配置，避免整体覆盖破坏其他工具的 hooks。
         var existingConfig: [String: Any] = [:]
         var existingHooks: [String: [[String: Any]]] = [:]
-        if let existingData = FileManager.default.contents(atPath: hooksJSONURL.path),
-           let json = try? JSONSerialization.jsonObject(with: existingData) as? [String: Any] {
+        if let existingData = FileManager.default.contents(atPath: hooksJSONURL.path) {
+            guard let json = try? JSONSerialization.jsonObject(with: existingData) as? [String: Any] else {
+                throw CursorSetupError.configParseFailed(hooksJSONURL.path)
+            }
             existingConfig = json
             if let hooks = json["hooks"] as? [String: [[String: Any]]] {
                 existingHooks = hooks
