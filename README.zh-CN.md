@@ -14,6 +14,14 @@ Liang 是一个 macOS 菜单栏常驻应用。它通过刘海周围一圈柔和�
 - **多状态区分**：`idle` / `processing` / `waiting` / `success` / `error` / `unknown` / `disconnected`，颜色与动画均可自定义。
 - **低干扰**：尊重 macOS「减少动态效果」与「低电量模式」，自动降级为静态光晕，省电且符合系统辅助功能规范。
 
+<table>
+  <tr>
+    <td align="center"><img src="assets/screenshots/notch-glow.gif" width="250" alt="刘海光晕"><br><sub>刘海光晕效果示意</sub></td>
+    <td align="center"><img src="assets/screenshots/cursor-glow.gif" width="250" alt="光标光晕"><br><sub>光标光晕效果示意</sub></td>
+    <td align="center"><img src="assets/screenshots/menubar-glow.gif" width="250" alt="菜单栏光晕"><br><sub>菜单栏光晕效果示意</sub></td>
+  </tr>
+</table>
+
 ## 安装
 
 1. 从 [Releases](https://github.com/fangshili/Liang/releases) 下载最新版 `Liang-x.y.z.dmg`。

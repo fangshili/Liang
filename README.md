@@ -14,6 +14,14 @@ Liang is a macOS menu bar app. Through a soft glow around the notch, a mouse-fol
 - **Multiple states**: `idle` / `processing` / `waiting` / `success` / `error` / `unknown` / `disconnected`, with customizable colors and animations.
 - **Low disturbance**: respects macOS "Reduce Motion" and "Low Power Mode", automatically degrading to a static glow to save power and comply with system accessibility guidelines.
 
+<table>
+  <tr>
+    <td align="center"><img src="assets/screenshots/notch-glow.gif" width="250" alt="Notch glow"><br><sub>Notch glow</sub></td>
+    <td align="center"><img src="assets/screenshots/cursor-glow.gif" width="250" alt="Cursor glow"><br><sub>Cursor glow</sub></td>
+    <td align="center"><img src="assets/screenshots/menubar-glow.gif" width="250" alt="Menu bar glow"><br><sub>Menu bar glow</sub></td>
+  </tr>
+</table>
+
 ## Installation
 
 1. Download the latest `Liang-x.y.z.dmg` from [Releases](https://github.com/fangshili/Liang/releases).
